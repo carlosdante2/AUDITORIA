@@ -1,5 +1,5 @@
 // Supabase Edge Function: embeddings
-// Generates OpenAI text-embedding-3-small for product names and stores them in products.embedding.
+// Generates Jina AI jina-embeddings-v3 (1024-dim) for product names and stores them in products.embedding.
 // Supports single product_id or batch up to 500.
 
 const CORS_HEADERS = {
@@ -7,9 +7,9 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const OPENAI_MODEL  = 'text-embedding-3-small'
-const MAX_BATCH     = 500
-const BATCH_CHUNK   = 50  // OpenAI embeddings per request
+const JINA_MODEL  = 'jina-embeddings-v3'
+const MAX_BATCH   = 500
+const BATCH_CHUNK = 50
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -22,10 +22,9 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get('authorization')
   if (!authHeader) return json({ error: 'UNAUTHORIZED' }, 401)
 
-  // Validate caller is authenticated
   const supabaseUrl    = Deno.env.get('SUPABASE_URL')!
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const openaiKey      = Deno.env.get('OPENAI_API_KEY')!
+  const jinaKey        = Deno.env.get('JINA_API_KEY')!
 
   const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { authorization: authHeader, apikey: Deno.env.get('SUPABASE_ANON_KEY')! },
@@ -45,7 +44,6 @@ Deno.serve(async (req: Request) => {
 
   if (ids.length === 0) return json({ error: 'NO_PRODUCT_IDS' }, 400)
 
-  // Fetch product names from Supabase
   const productsRes = await fetch(
     `${supabaseUrl}/rest/v1/products?id=in.(${ids.join(',')})&select=id,nombre`,
     { headers: { apikey: serviceRoleKey, authorization: `Bearer ${serviceRoleKey}` } }
@@ -57,33 +55,31 @@ Deno.serve(async (req: Request) => {
   let processed = 0
   const errors: string[] = []
 
-  // Process in chunks to respect OpenAI rate limits
   for (let i = 0; i < products.length; i += BATCH_CHUNK) {
     const chunk = products.slice(i, i + BATCH_CHUNK)
 
     try {
-      const embRes = await fetch('https://api.openai.com/v1/embeddings', {
+      const embRes = await fetch('https://api.jina.ai/v1/embeddings', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openaiKey}`,
+          'Authorization': `Bearer ${jinaKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: OPENAI_MODEL,
+          model: JINA_MODEL,
           input: chunk.map((p) => p.nombre),
         }),
       })
 
       if (!embRes.ok) {
         const errBody = await embRes.text()
-        errors.push(`OpenAI error chunk ${i}: ${errBody.slice(0, 100)}`)
+        errors.push(`Jina error chunk ${i}: ${errBody.slice(0, 100)}`)
         continue
       }
 
       const embData = await embRes.json()
       const embeddings: Array<{ index: number; embedding: number[] }> = embData.data
 
-      // Update each product's embedding in Supabase
       for (const { index, embedding } of embeddings) {
         const { id } = chunk[index]
         const updateRes = await fetch(

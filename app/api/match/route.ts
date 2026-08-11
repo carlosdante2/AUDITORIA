@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import OpenAI from 'openai'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -18,14 +17,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
-    const embeddingResponse = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: query.trim(),
+    const jinaRes = await fetch('https://api.jina.ai/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.JINA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'jina-embeddings-v3',
+        input: [query.trim()],
+      }),
     })
 
-    const embedding = embeddingResponse.data[0].embedding
+    if (!jinaRes.ok) {
+      const err = await jinaRes.text()
+      console.error('[api/match] Jina error:', err)
+      return NextResponse.json({ error: 'EMBEDDING_ERROR' }, { status: 500 })
+    }
+
+    const jinaData = await jinaRes.json()
+    const embedding: number[] = jinaData.data[0].embedding
 
     // match_products is scoped to caller's tenant via get_my_tenant_id() in the function
     const { data: matches, error: matchError } = await supabase.rpc('match_products', {

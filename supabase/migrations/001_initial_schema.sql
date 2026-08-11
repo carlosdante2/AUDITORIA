@@ -48,7 +48,7 @@ CREATE TABLE products (
   unidad_medida             text        NOT NULL,
   subtipo                   text        NOT NULL,
   requiere_fecha_vencimiento boolean    NOT NULL DEFAULT true,
-  embedding                 vector(1536),
+  embedding                 vector(1024),
   estado                    text        NOT NULL DEFAULT 'activo'
                             CHECK (estado IN ('activo', 'inactivo')),
   created_at                timestamptz NOT NULL DEFAULT now(),

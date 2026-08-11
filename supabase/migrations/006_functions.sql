@@ -32,7 +32,7 @@ $$;
 -- Called from /api/match Next.js Route Handler
 -- ================================================================
 CREATE OR REPLACE FUNCTION match_products(
-  query_embedding vector(1536),
+  query_embedding vector(1024),
   match_threshold float DEFAULT 0.70,
   match_count     int   DEFAULT 3
 )

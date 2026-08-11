@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import Anthropic from '@anthropic-ai/sdk'
+import Groq from 'groq-sdk'
 
-// Claude haiku insights — ONLINE ONLY, OPTIONAL
+// Groq LLM insights — ONLINE ONLY, OPTIONAL
 // Never blocks the audit flow — if unavailable, callers ignore gracefully
 
 export async function POST(request: NextRequest) {
@@ -21,9 +21,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-    // Limit to 20 most critical items to stay within context budget
     const criticalItems = counts_summary
       .filter((c: { semaforo_color: string }) => c.semaforo_color !== 'verde')
       .slice(0, 20)
@@ -47,23 +46,23 @@ Enfócate en acciones inmediatas. Responde en español, tono profesional.
 
 Hallazgos (${criticalItems.length} con alertas):
 ${criticalItems
-  .map((c: { nombre: string; cantidad: number; unidad_medida: string; semaforo_color: string; semaforo_razon: string; semaforo_accion: string })  =>
+  .map((c: { nombre: string; cantidad: number; unidad_medida: string; semaforo_color: string; semaforo_razon: string; semaforo_accion: string }) =>
     `- ${c.nombre} (${c.cantidad} ${c.unidad_medida}): ${c.semaforo_color.toUpperCase()} — ${c.semaforo_razon}. Acción: ${c.semaforo_accion}`
   )
   .join('\n')}`
 
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 300,
       temperature: 0.3,
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const insights = (message.content[0] as { type: string; text: string }).text
+    const insights = completion.choices[0].message.content ?? ''
 
     return NextResponse.json({ insights, critical_count: criticalCount, warning_count: warningCount, ok_count: okCount })
   } catch (err) {
-    console.error('[api/semaforo-ia] Claude error:', err)
+    console.error('[api/semaforo-ia] Groq error:', err)
     return NextResponse.json(
       { error: 'AI_UNAVAILABLE', message: 'Insights de IA no disponibles sin conexión. El semáforo local sigue activo.' },
       { status: 503 }
