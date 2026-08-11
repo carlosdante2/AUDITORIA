@@ -2,6 +2,25 @@
 -- All tenant isolation enforced here via get_my_tenant_id()
 -- NEVER modify these policies without explicit instruction (Constitution II)
 
+-- ================================================================
+-- Helper functions (needed before policies can reference them)
+-- ================================================================
+CREATE OR REPLACE FUNCTION get_my_tenant_id()
+RETURNS uuid
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid;
+$$;
+
+CREATE OR REPLACE FUNCTION get_my_rol()
+RETURNS text
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT auth.jwt() -> 'app_metadata' ->> 'rol';
+$$;
+
 -- Enable RLS on all tenant-scoped tables
 ALTER TABLE profiles        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products        ENABLE ROW LEVEL SECURITY;
