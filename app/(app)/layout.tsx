@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
 import {
   LayoutDashboard, Mic, ClipboardList, PackageCheck,
-  Settings2, LogOut, Clock, Users, Building2, Boxes, Bell
+  Settings2, LogOut, Clock, Users, Building2, Boxes, Bell, Thermometer
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode }
@@ -28,10 +28,11 @@ const NAV: Record<string, NavItem[]> = {
     { href: '/recepcion',  label: 'Recepción',  icon: <PackageCheck className="w-5 h-5" /> },
   ],
   auditor: [
-    { href: '/captura',    label: 'Captura',    icon: <Mic className="w-5 h-5" /> },
-    { href: '/inventario', label: 'Inventario', icon: <Boxes className="w-5 h-5" /> },
-    { href: '/sesiones',   label: 'Sesiones',   icon: <ClipboardList className="w-5 h-5" /> },
-    { href: '/recepcion',  label: 'Recepción',  icon: <PackageCheck className="w-5 h-5" /> },
+    { href: '/captura',     label: 'Captura',     icon: <Mic className="w-5 h-5" /> },
+    { href: '/temperatura', label: 'Temp.',       icon: <Thermometer className="w-5 h-5" /> },
+    { href: '/inventario',  label: 'Inventario',  icon: <Boxes className="w-5 h-5" /> },
+    { href: '/sesiones',    label: 'Sesiones',    icon: <ClipboardList className="w-5 h-5" /> },
+    { href: '/recepcion',   label: 'Recepción',   icon: <PackageCheck className="w-5 h-5" /> },
   ],
 }
 

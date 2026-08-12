@@ -15,6 +15,8 @@ interface Props { initialReglas: Regla[]; categorias: Opt[]; productos: Opt[] }
 
 const TIPOS: { v: TipoRegla; label: string }[] = [
   { v: 'VENCIMIENTO', label: 'Vencimiento (días)' },
+  { v: 'TEMPERATURA', label: 'Temperatura (°C)' },
+  { v: 'LECTURA_VENCIDA', label: 'Lectura vencida (horas sin medir)' },
   { v: 'TRAZABILIDAD', label: 'Trazabilidad (campos faltantes)' },
   { v: 'CUARENTENA', label: 'Cuarentena (estado)' },
   { v: 'STOCK_MINIMO', label: 'Stock mínimo (cantidad)' },

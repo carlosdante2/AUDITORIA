@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, Ban, PackageX } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, ChevronUp, Ban, PackageX, Thermometer } from 'lucide-react'
 
 interface Estado { color: string; detalle: Detalle[]; bloqueo_salida: boolean; bloqueo_ingreso: boolean; evaluado_en: string }
 interface Detalle { tipo: string; color: string; motivo?: string; mensaje?: string | null; valor_evaluado: number | null; valor_text: string | null }
@@ -42,9 +43,14 @@ export function InventarioClient({ initialLotes }: { initialLotes: Lote[] }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
-        <p className="text-sm text-gray-500">{lotes.length} lote{lotes.length !== 1 ? 's' : ''} · semáforo según reglas configuradas</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
+          <p className="text-sm text-gray-500">{lotes.length} lote{lotes.length !== 1 ? 's' : ''} · semáforo según reglas configuradas</p>
+        </div>
+        <Link href="/temperatura" className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-700 border border-cyan-200 bg-cyan-50 rounded-lg px-3 h-9">
+          <Thermometer className="w-3.5 h-3.5" />Temperatura
+        </Link>
       </div>
 
       {/* Filtros por color */}

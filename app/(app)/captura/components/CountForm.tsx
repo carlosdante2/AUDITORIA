@@ -11,10 +11,13 @@ import type { SemaforoOutput } from '@/lib/semaforo'
 import type { MatchCandidate } from '@/lib/matching'
 import type { ProductCache } from '@/lib/db'
 
+interface EquipoOpt { id: string; codigo: string; tipo: string }
+
 interface CountFormProps {
   sessionId: string
   tenantId: string
   initialQuery?: string
+  equipos?: EquipoOpt[]
   onSaved?: (localId: string) => void
 }
 
@@ -25,7 +28,7 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: CountFormProps) {
+export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = [], onSaved }: CountFormProps) {
   const [query, setQuery] = useState(initialQuery)
   const [candidates, setCandidates] = useState<MatchCandidate[]>([])
   const [selectedProduct, setSelectedProduct] = useState<MatchCandidate | null>(null)
@@ -33,6 +36,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [fechaRecepcion, setFechaRecepcion] = useState('')
   const [codigoLote, setCodigoLote] = useState('')
+  const [equipoId, setEquipoId] = useState('')
   const [loteColor, setLoteColor] = useState<string | null>(null)
   const [estadoEmpaque, setEstadoEmpaque] = useState<EstadoEmpaque>('intacto')
   const [observacion, setObservacion] = useState<ObservacionVisual>('normal')
@@ -173,6 +177,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
             fecha_vencimiento: fechaVencimiento || null,
             fecha_recepcion: fechaRecepcion || undefined,
             codigo_lote: codigoLote || null,
+            equipo_id: equipoId || null,
           }),
         })
         if (res.ok) { const d = await res.json(); setLoteColor(d.estado?.color_final ?? null) }
@@ -192,6 +197,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
       setFechaVencimiento('')
       setFechaRecepcion('')
       setCodigoLote('')
+      setEquipoId('')
       setLoteColor(null)
       setEstadoEmpaque('intacto')
       setObservacion('normal')
@@ -313,6 +319,23 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
               autoComplete="off"
             />
           </div>
+
+          {/* Equipo (cadena de frío) */}
+          {equipos.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-gray-700">
+                Equipo <span className="font-normal text-gray-400">(cámara/nevera — para reglas de temperatura)</span>
+              </label>
+              <select
+                value={equipoId}
+                onChange={(e) => setEquipoId(e.target.value)}
+                className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Sin equipo asignado</option>
+                {equipos.map((eq) => <option key={eq.id} value={eq.id}>{eq.codigo}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Estado del empaque */}
           <div className="space-y-1.5">

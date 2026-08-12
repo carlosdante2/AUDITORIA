@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       codigo_lote: body.codigo_lote ?? null,
       proveedor_id: body.proveedor_id ?? null,
       ubicacion_id: body.ubicacion_id ?? null,
+      equipo_id: body.equipo_id ?? null,
       cantidad: typeof body.cantidad === 'number' ? body.cantidad : Number(body.cantidad) || 0,
       fecha_recepcion: body.fecha_recepcion ?? new Date().toISOString(),
       fecha_produccion: body.fecha_produccion ?? null,

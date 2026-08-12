@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal, FolderTree, Bell } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal, FolderTree, Bell, Refrigerator } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -24,6 +24,13 @@ const SECTIONS = [
     title: 'Categorías',
     desc: 'Agrupar productos para asignarles reglas de semáforo por categoría',
     bg: 'bg-indigo-50 border-indigo-200',
+  },
+  {
+    href: '/admin/equipos',
+    icon: <Refrigerator className="w-6 h-6 text-cyan-600" />,
+    title: 'Equipos de frío',
+    desc: 'Cámaras y neveras donde se guardan los lotes (base de las reglas de temperatura)',
+    bg: 'bg-cyan-50 border-cyan-200',
   },
   {
     href: '/admin/importar',

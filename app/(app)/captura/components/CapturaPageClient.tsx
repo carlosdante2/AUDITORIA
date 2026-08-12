@@ -17,14 +17,16 @@ interface Session {
 
 interface SeccionOpt { id: string; nombre: string; estado: string }
 interface SedeOpt { id: string; nombre: string; secciones: SeccionOpt[] }
+interface EquipoOpt { id: string; codigo: string; tipo: string }
 
 interface CapturaPageClientProps {
   tenantId: string
   initialSessions: Session[]
   sedes: SedeOpt[]
+  equipos: EquipoOpt[]
 }
 
-export function CapturaPageClient({ tenantId, initialSessions, sedes }: CapturaPageClientProps) {
+export function CapturaPageClient({ tenantId, initialSessions, sedes, equipos }: CapturaPageClientProps) {
   const [sessions, setSessions] = useState<Session[]>(initialSessions)
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [sedeId, setSedeId] = useState('')
@@ -121,6 +123,7 @@ export function CapturaPageClient({ tenantId, initialSessions, sedes }: CapturaP
             sessionId={activeSession.id}
             tenantId={tenantId}
             initialQuery={transcription}
+            equipos={equipos}
             onSaved={handleCountSaved}
           />
         </div>
