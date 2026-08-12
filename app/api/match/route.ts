@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { logApiUsage } from '@/lib/costs'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest) {
 
     const jinaData = await jinaRes.json()
     const embedding: number[] = jinaData.data[0].embedding
+
+    await logApiUsage(supabase, {
+      tenantId: user.app_metadata?.tenant_id as string,
+      service: 'jina',
+      model: 'jina-embeddings-v3',
+      endpoint: 'match',
+      inputTokens: jinaData.usage?.total_tokens ?? 0,
+    })
 
     // match_products is scoped to caller's tenant via get_my_tenant_id() in the function
     const { data: matches, error: matchError } = await supabase.rpc('match_products', {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { logApiUsage } from '@/lib/costs'
 
 const BATCH_SIZE = 50
 
@@ -49,6 +50,14 @@ export async function POST(request: NextRequest) {
       const embeddings: number[][] = jinaData.data.map(
         (d: { embedding: number[] }) => d.embedding
       )
+
+      await logApiUsage(supabase, {
+        tenantId: user.app_metadata?.tenant_id as string,
+        service: 'jina',
+        model: 'jina-embeddings-v3',
+        endpoint: 'embeddings',
+        inputTokens: jinaData.usage?.total_tokens ?? 0,
+      })
 
       for (let j = 0; j < batch.length; j++) {
         const { error: updateErr } = await supabase

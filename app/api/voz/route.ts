@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { logApiUsage } from '@/lib/costs'
 import Groq from 'groq-sdk'
 
 export async function POST(request: NextRequest) {
@@ -39,6 +40,16 @@ export async function POST(request: NextRequest) {
       file,
       model: 'whisper-large-v3-turbo',
       language,
+      response_format: 'verbose_json', // incluye `duration` para costear por segundo
+    })
+
+    const durationSec = (transcription as { duration?: number }).duration ?? 0
+    await logApiUsage(supabase, {
+      tenantId: user.app_metadata?.tenant_id as string,
+      service: 'groq',
+      model: 'whisper-large-v3-turbo',
+      endpoint: 'voz',
+      audioSeconds: durationSec,
     })
 
     return NextResponse.json({

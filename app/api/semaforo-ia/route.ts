@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { logApiUsage } from '@/lib/costs'
 import Groq from 'groq-sdk'
 
 // Groq LLM insights — ONLINE ONLY, OPTIONAL
@@ -59,6 +60,15 @@ ${criticalItems
     })
 
     const insights = completion.choices[0].message.content ?? ''
+
+    await logApiUsage(supabase, {
+      tenantId: user.app_metadata?.tenant_id as string,
+      service: 'groq',
+      model: 'llama-3.3-70b-versatile',
+      endpoint: 'insights',
+      inputTokens: completion.usage?.prompt_tokens ?? 0,
+      outputTokens: completion.usage?.completion_tokens ?? 0,
+    })
 
     return NextResponse.json({ insights, critical_count: criticalCount, warning_count: warningCount, ok_count: okCount })
   } catch (err) {

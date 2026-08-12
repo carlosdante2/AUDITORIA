@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2 } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -38,6 +38,20 @@ const SECTIONS = [
     title: 'Usuarios y accesos',
     desc: 'Invitar auditores y supervisores al sistema',
     bg: 'bg-green-50 border-green-200',
+  },
+  {
+    href: '/admin/criterios',
+    icon: <TrafficCone className="w-6 h-6 text-rose-600" />,
+    title: 'Criterios del semáforo',
+    desc: 'Ver las reglas de inocuidad (verde/amarillo/rojo) que aplica el sistema',
+    bg: 'bg-rose-50 border-rose-200',
+  },
+  {
+    href: '/admin/costos',
+    icon: <DollarSign className="w-6 h-6 text-emerald-600" />,
+    title: 'Control de costos IA',
+    desc: 'Gasto real y proyección de Groq y Jina, con alertas de plan gratuito',
+    bg: 'bg-emerald-50 border-emerald-200',
   },
 ]
 
