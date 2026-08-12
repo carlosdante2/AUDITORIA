@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
 import {
   LayoutDashboard, Mic, ClipboardList, PackageCheck,
-  Settings2, LogOut, Clock, Users, Building2, Boxes
+  Settings2, LogOut, Clock, Users, Building2, Boxes, Bell
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode }
@@ -23,6 +23,7 @@ const NAV: Record<string, NavItem[]> = {
   supervisor: [
     { href: '/dashboard',  label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/inventario', label: 'Inventario', icon: <Boxes className="w-5 h-5" /> },
+    { href: '/alertas',    label: 'Alertas',    icon: <Bell className="w-5 h-5" /> },
     { href: '/sesiones',   label: 'Sesiones',   icon: <ClipboardList className="w-5 h-5" /> },
     { href: '/recepcion',  label: 'Recepción',  icon: <PackageCheck className="w-5 h-5" /> },
   ],

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal, FolderTree } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal, FolderTree, Bell } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -52,6 +52,13 @@ const SECTIONS = [
     title: 'Reglas del semáforo',
     desc: 'Configurar umbrales (vencimiento, trazabilidad, cuarentena, stock) + simulador',
     bg: 'bg-rose-50 border-rose-200',
+  },
+  {
+    href: '/alertas',
+    icon: <Bell className="w-6 h-6 text-amber-600" />,
+    title: 'Alertas',
+    desc: 'Revisar, reconocer y cerrar los hallazgos del semáforo',
+    bg: 'bg-amber-50 border-amber-200',
   },
   {
     href: '/admin/criterios',
