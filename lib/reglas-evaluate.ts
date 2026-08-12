@@ -37,7 +37,7 @@ export async function evaluarYMaterializar(
   }
 
   const [{ reglas, tiposActivos }, chain] = await Promise.all([
-    cargarReglasActivas(supabase),
+    cargarReglasActivas(supabase, tenantId), // filtra por tenant (necesario bajo service-role/cron)
     categoriaChain(supabase, categoria_id),
   ])
 

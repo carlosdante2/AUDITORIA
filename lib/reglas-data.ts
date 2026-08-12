@@ -12,14 +12,18 @@ export async function insertarUmbrales(supabase: SupabaseClient, reglaId: string
 }
 
 // Carga las reglas vigentes (vigente_hasta null && activa) con sus umbrales.
+// tenantId es opcional: bajo RLS el scoping es automático; con service-role
+// (cron) hay que filtrar explícitamente por tenant.
 export async function cargarReglasActivas(
-  supabase: SupabaseClient
+  supabase: SupabaseClient, tenantId?: string
 ): Promise<{ reglas: Regla[]; tiposActivos: TipoRegla[] }> {
-  const { data } = await supabase
+  let q = supabase
     .from('reglas')
     .select('id, tipo, ambito, ambito_id, version, regla_umbrales(color, operador, valor_min, valor_max, valor_text, unidad, accion, mensaje, orden)')
     .is('vigente_hasta', null)
     .eq('activa', true)
+  if (tenantId) q = q.eq('tenant_id', tenantId)
+  const { data } = await q
 
   const reglas: Regla[] = (data ?? []).map((r: Record<string, unknown>) => ({
     id: r.id as string,
