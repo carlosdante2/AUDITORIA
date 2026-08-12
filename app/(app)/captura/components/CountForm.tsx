@@ -32,6 +32,8 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
   const [cantidad, setCantidad] = useState('')
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [fechaRecepcion, setFechaRecepcion] = useState('')
+  const [codigoLote, setCodigoLote] = useState('')
+  const [loteColor, setLoteColor] = useState<string | null>(null)
   const [estadoEmpaque, setEstadoEmpaque] = useState<EstadoEmpaque>('intacto')
   const [observacion, setObservacion] = useState<ObservacionVisual>('normal')
   const [semaforo, setSemaforo] = useState<SemaforoOutput | null>(null)
@@ -158,6 +160,25 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
       created_at: now,
     })
 
+    // Crea el lote y lo evalúa con el motor de reglas configurable (online).
+    // Offline: el conteo queda en cola; el lote se puede crear luego.
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      try {
+        const res = await fetch('/api/lotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            producto_id: selectedProduct.productId,
+            cantidad: parseFloat(cantidad),
+            fecha_vencimiento: fechaVencimiento || null,
+            fecha_recepcion: fechaRecepcion || undefined,
+            codigo_lote: codigoLote || null,
+          }),
+        })
+        if (res.ok) { const d = await res.json(); setLoteColor(d.estado?.color_final ?? null) }
+      } catch { /* offline / falla — no bloquea la captura */ }
+    }
+
     setSaving(false)
     setSaved(true)
     onSaved?.(localId)
@@ -170,13 +191,15 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
       setCantidad('')
       setFechaVencimiento('')
       setFechaRecepcion('')
+      setCodigoLote('')
+      setLoteColor(null)
       setEstadoEmpaque('intacto')
       setObservacion('normal')
       setSemaforo(null)
       setSaved(false)
       setPhotoBlob(null)
       setPhotoQueued(false)
-    }, 1500)
+    }, 2500)
   }
 
   const canSubmit = !!selectedProduct && !!cantidad && !saving
@@ -276,6 +299,21 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
             </div>
           )}
 
+          {/* Código de lote (trazabilidad) */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700">
+              Código de lote <span className="font-normal text-gray-400">(opcional, mejora trazabilidad)</span>
+            </label>
+            <input
+              type="text"
+              value={codigoLote}
+              onChange={(e) => setCodigoLote(e.target.value)}
+              placeholder="Ej. L-2026-0812"
+              className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoComplete="off"
+            />
+          </div>
+
           {/* Estado del empaque */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700">Estado del empaque</label>
@@ -351,6 +389,19 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
               />
             )}
           </div>
+
+          {/* Resultado del motor configurable (lote) */}
+          {loteColor && (
+            <div className={`rounded-xl border px-4 py-2.5 text-center text-sm font-bold ${
+              loteColor === 'VERDE' ? 'bg-green-50 border-green-200 text-green-800'
+              : loteColor === 'AMARILLO' ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+              : loteColor === 'NARANJA' ? 'bg-orange-50 border-orange-200 text-orange-800'
+              : loteColor === 'ROJO' ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-gray-50 border-gray-200 text-gray-600'
+            }`}>
+              Semáforo por reglas: {loteColor}
+            </div>
+          )}
 
           {/* Submit */}
           <button

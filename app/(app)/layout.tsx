@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
 import {
   LayoutDashboard, Mic, ClipboardList, PackageCheck,
-  Settings2, LogOut, Clock, Users, Building2
+  Settings2, LogOut, Clock, Users, Building2, Boxes
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode }
@@ -21,14 +21,16 @@ const NAV: Record<string, NavItem[]> = {
     { href: '/admin/usuarios',  label: 'Usuarios',   icon: <Users className="w-5 h-5" /> },
   ],
   supervisor: [
-    { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { href: '/sesiones',  label: 'Sesiones',  icon: <ClipboardList className="w-5 h-5" /> },
-    { href: '/recepcion', label: 'Recepción', icon: <PackageCheck className="w-5 h-5" /> },
+    { href: '/dashboard',  label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" /> },
+    { href: '/inventario', label: 'Inventario', icon: <Boxes className="w-5 h-5" /> },
+    { href: '/sesiones',   label: 'Sesiones',   icon: <ClipboardList className="w-5 h-5" /> },
+    { href: '/recepcion',  label: 'Recepción',  icon: <PackageCheck className="w-5 h-5" /> },
   ],
   auditor: [
-    { href: '/captura',   label: 'Captura',   icon: <Mic className="w-5 h-5" /> },
-    { href: '/sesiones',  label: 'Sesiones',  icon: <ClipboardList className="w-5 h-5" /> },
-    { href: '/recepcion', label: 'Recepción', icon: <PackageCheck className="w-5 h-5" /> },
+    { href: '/captura',    label: 'Captura',    icon: <Mic className="w-5 h-5" /> },
+    { href: '/inventario', label: 'Inventario', icon: <Boxes className="w-5 h-5" /> },
+    { href: '/sesiones',   label: 'Sesiones',   icon: <ClipboardList className="w-5 h-5" /> },
+    { href: '/recepcion',  label: 'Recepción',  icon: <PackageCheck className="w-5 h-5" /> },
   ],
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { validarUmbrales, type TipoRegla, type Umbral } from '@/lib/reglas-engine'
 import { insertarUmbrales } from '@/lib/reglas-data'
+import { reevaluarTenant } from '@/lib/reglas-evaluate'
 
 // GET /api/reglas?tipo=&ambito=  → reglas vigentes con umbrales
 export async function GET(request: NextRequest) {
@@ -71,5 +72,6 @@ export async function POST(request: NextRequest) {
   }
 
   await insertarUmbrales(supabase, regla.id, umbrales)
+  await reevaluarTenant(supabase, tenantId).catch(() => {}) // re-evalúa inventario con la nueva regla
   return NextResponse.json({ id: regla.id, advertencias }, { status: 201 })
 }

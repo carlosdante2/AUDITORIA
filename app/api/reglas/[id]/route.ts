@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { validarUmbrales, type TipoRegla, type Umbral } from '@/lib/reglas-engine'
 import { insertarUmbrales } from '@/lib/reglas-data'
+import { reevaluarTenant } from '@/lib/reglas-evaluate'
 
 // PUT /api/reglas/:id → versiona (cierra la actual, crea version+1). NO sobreescribe.
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -51,6 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   await insertarUmbrales(supabase, nueva.id, umbrales)
+  await reevaluarTenant(supabase, tenantId).catch(() => {}) // re-evalúa inventario con la nueva versión
   return NextResponse.json({ id: nueva.id, version: (actual.version as number) + 1, advertencias })
 }
 
