@@ -193,7 +193,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Buscar en catálogo offline…"
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             autoComplete="off"
           />
         </div>
@@ -235,12 +235,13 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
             </label>
             <input
               type="number"
+              inputMode="decimal"
               value={cantidad}
               onChange={(e) => setCantidad(e.target.value)}
               min="0"
               step="0.001"
               placeholder="0"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 h-14 rounded-xl border border-gray-300 text-xl font-semibold text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -254,7 +255,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
                 type="date"
                 value={fechaVencimiento}
                 onChange={(e) => handleFieldChange(setFechaVencimiento, 'fv', e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
@@ -270,7 +271,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
                 value={fechaRecepcion}
                 onChange={(e) => handleFieldChange(setFechaRecepcion, 'fr', e.target.value)}
                 max={todayISO()}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
@@ -288,7 +289,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
                   key={val}
                   type="button"
                   onClick={() => handleFieldChange(setEstadoEmpaque, 'empaque', val)}
-                  className={`py-2 px-2 rounded-lg border-2 text-xs font-semibold transition-colors ${
+                  className={`min-h-[52px] px-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
                     estadoEmpaque === val ? activeClass : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
                   }`}
                 >
@@ -311,7 +312,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', onSaved }: C
                   key={val}
                   type="button"
                   onClick={() => handleFieldChange(setObservacion, 'obs', val)}
-                  className={`py-2 px-2 rounded-lg border-2 text-xs font-semibold transition-colors ${
+                  className={`min-h-[52px] px-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
                     observacion === val ? activeClass : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
                   }`}
                 >

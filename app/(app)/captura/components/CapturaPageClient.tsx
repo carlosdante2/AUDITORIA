@@ -72,9 +72,9 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
             <button
               type="button"
               onClick={() => setActiveSession(null)}
-              className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
+              className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 px-3 h-9 rounded-lg border border-blue-200 bg-blue-50"
             >
-              Cerrar sesión
+              Cambiar bodega
             </button>
           </div>
         </div>
@@ -136,7 +136,7 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
             value={bodegaInput}
             onChange={(e) => setBodegaInput(e.target.value)}
             placeholder="Nombre de la bodega (ej. Bodega Principal)"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyDown={(e) => e.key === 'Enter' && createSession()}
             autoFocus
           />
@@ -144,7 +144,7 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              className="flex-1 h-12 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50"
             >
               Cancelar
             </button>
@@ -152,7 +152,7 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
               type="button"
               onClick={createSession}
               disabled={!bodegaInput.trim() || creating}
-              className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold disabled:opacity-50 hover:bg-blue-700"
+              className="flex-1 h-12 rounded-xl bg-blue-600 text-white text-sm font-bold disabled:opacity-50 hover:bg-blue-700 active:scale-[0.98] transition-transform"
             >
               {creating ? 'Creando…' : 'Iniciar sesión'}
             </button>
