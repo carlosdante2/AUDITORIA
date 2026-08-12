@@ -90,15 +90,12 @@ export function PendientesClient({ initialPending, userId }: PendientesClientPro
         })
         .eq('id', item.id)
 
-      // 3. Trigger embedding generation (T052)
-      await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/embeddings`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_id: newProduct.id }),
-        }
-      )
+      // 3. Trigger embedding generation via our API route
+      fetch('/api/embeddings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }).catch(() => {})
 
       setItems((prev) => prev.filter((p) => p.id !== item.id))
       setMsg((prev) => ({ ...prev, [item.id]: '✓ Aprobado' }))

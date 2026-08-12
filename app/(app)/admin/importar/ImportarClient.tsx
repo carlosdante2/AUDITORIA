@@ -113,16 +113,13 @@ export function ImportarClient({ tenantId }: ImportarClientProps) {
 
       setResult({ imported: insertedIds.length, errors: rowErrors, productIds: insertedIds })
 
-      // Trigger embeddings for all imported products
+      // Trigger embeddings for all imported products via our API route
       if (insertedIds.length > 0) {
-        fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/embeddings`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product_ids: insertedIds }),
-          }
-        ).catch(() => { /* embeddings are async — ignore failure */ })
+        fetch('/api/embeddings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        }).catch(() => { /* embeddings are async — ignore failure */ })
       }
 
       setStatus('done')
