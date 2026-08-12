@@ -5,6 +5,7 @@ export interface MatchCandidate {
   nombre: string
   unidad_medida: string
   subtipo: string
+  categoria_id: string | null
   requiere_fecha_vencimiento: boolean
   score: number
   method: 'embedding' | 'text'
@@ -40,6 +41,7 @@ export async function matchByEmbedding(
       nombre: p.nombre,
       unidad_medida: p.unidad_medida,
       subtipo: p.subtipo,
+      categoria_id: p.categoria_id ?? null,
       requiere_fecha_vencimiento: p.requiere_fecha_vencimiento,
       score: dot(queryEmbedding, p.embedding as number[]),
       method: 'embedding' as const,
@@ -75,6 +77,7 @@ export async function matchByText(
         nombre: p.nombre,
         unidad_medida: p.unidad_medida,
         subtipo: p.subtipo,
+        categoria_id: p.categoria_id ?? null,
         requiere_fecha_vencimiento: p.requiere_fecha_vencimiento,
         score,
         method: 'text' as const,

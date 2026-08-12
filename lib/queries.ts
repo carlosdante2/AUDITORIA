@@ -10,7 +10,9 @@ export interface SessionSummary {
   closed_at: string | null
   verde: number
   amarillo: number
+  naranja: number
   rojo: number
+  gris: number
   total: number
 }
 
@@ -21,7 +23,7 @@ export interface AlertItem {
   product_name: string
   cantidad: number
   unidad_medida: string
-  semaforo_color: 'rojo' | 'amarillo'
+  semaforo_color: 'rojo' | 'naranja' | 'amarillo'
   semaforo_razon: string
   semaforo_accion: string
   created_at: string
@@ -61,16 +63,18 @@ export async function getActiveSessions(supabase: SupabaseClient): Promise<Sessi
     .select('session_id, semaforo_color')
     .in('session_id', sessionIds)
 
-  const tally: Record<string, { verde: number; amarillo: number; rojo: number }> = {}
+  type Tally = { verde: number; amarillo: number; naranja: number; rojo: number; gris: number }
+  const empty = (): Tally => ({ verde: 0, amarillo: 0, naranja: 0, rojo: 0, gris: 0 })
+  const tally: Record<string, Tally> = {}
   for (const row of counts ?? []) {
-    const { session_id, semaforo_color } = row as { session_id: string; semaforo_color: 'verde' | 'amarillo' | 'rojo' }
-    if (!tally[session_id]) tally[session_id] = { verde: 0, amarillo: 0, rojo: 0 }
-    tally[session_id][semaforo_color]++
+    const { session_id, semaforo_color } = row as { session_id: string; semaforo_color: keyof Tally }
+    if (!tally[session_id]) tally[session_id] = empty()
+    if (semaforo_color in tally[session_id]) tally[session_id][semaforo_color]++
   }
 
   return sessions.map((s) => {
-    const t = tally[s.id] ?? { verde: 0, amarillo: 0, rojo: 0 }
-    return { ...s, ...t, total: t.verde + t.amarillo + t.rojo }
+    const t = tally[s.id] ?? empty()
+    return { ...s, ...t, total: t.verde + t.amarillo + t.naranja + t.rojo + t.gris }
   })
 }
 
@@ -106,9 +110,9 @@ export async function getAlertSummary(supabase: SupabaseClient, limit = 20): Pro
       products ( nombre ),
       audit_sessions ( bodega )
     `)
-    .in('semaforo_color', ['rojo', 'amarillo'])
+    .in('semaforo_color', ['rojo', 'naranja', 'amarillo'])
     .gte('created_at', since)
-    .order('semaforo_color', { ascending: false }) // rojo > amarillo lexically? no. rojo sorts after amarillo
+    .order('semaforo_color', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -119,7 +123,7 @@ export async function getAlertSummary(supabase: SupabaseClient, limit = 20): Pro
     product_name: (row.products as { nombre: string } | null)?.nombre ?? 'Desconocido',
     cantidad: row.cantidad as number,
     unidad_medida: row.unidad_medida as string,
-    semaforo_color: row.semaforo_color as 'rojo' | 'amarillo',
+    semaforo_color: row.semaforo_color as 'rojo' | 'naranja' | 'amarillo',
     semaforo_razon: row.semaforo_razon as string,
     semaforo_accion: row.semaforo_accion as string,
     created_at: row.created_at as string,

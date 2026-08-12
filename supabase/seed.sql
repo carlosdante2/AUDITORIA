@@ -72,3 +72,55 @@ VALUES
   ('10000000-0000-0000-0000-000000000001', 'Atún en lata',        'unidades', 'enlatado',        true),
   ('10000000-0000-0000-0000-000000000001', 'Agua mineral 500ml',  'unidades', 'bebida',          true)
 ON CONFLICT (tenant_id, nombre, unidad_medida) DO NOTHING;
+
+-- ================================================================
+-- Reglas demo del semáforo configurable (Tenant A) — GLOBAL
+-- ================================================================
+-- Reemplazan el comportamiento del motor cableado eliminado. El admin puede
+-- editarlas/ampliarlas por categoría o producto desde /admin/reglas.
+-- Requiere migraciones 009–012 aplicadas (incl. estrategia_circular).
+-- creado_por = NULL (seed sin usuario); ids fijos para idempotencia.
+-- TEMPERATURA/LECTURA_VENCIDA se dejan al admin (dependen de equipos/lecturas).
+
+-- 1) VENCIMIENTO (con rutas de valorización → ODS derivados en la UI)
+INSERT INTO reglas (id, tenant_id, tipo, ambito, ambito_id, nombre, creado_por)
+VALUES ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001',
+        'VENCIMIENTO', 'GLOBAL', NULL, 'Vencimiento estándar', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO regla_umbrales (regla_id, color, operador, valor_min, valor_max, unidad, accion, mensaje, orden, estrategia_circular)
+SELECT * FROM (VALUES
+  ('20000000-0000-0000-0000-000000000001'::uuid, 'VERDE',   'GT',      15::numeric, NULL::numeric, 'dias', 'SOLO_ALERTA',   NULL,                                       0, NULL::text),
+  ('20000000-0000-0000-0000-000000000001'::uuid, 'AMARILLO','BETWEEN',  7::numeric, 15::numeric,   'dias', 'SOLO_ALERTA',   'Por vencer: priorizar uso interno',        1, 'REDISTRIBUCION_INTERNA'),
+  ('20000000-0000-0000-0000-000000000001'::uuid, 'NARANJA', 'BETWEEN',  1::numeric,  6::numeric,   'dias', 'SOLO_ALERTA',   'Vence pronto: derivar a banco de alimentos', 2, 'BANCO_ALIMENTOS'),
+  ('20000000-0000-0000-0000-000000000001'::uuid, 'ROJO',    'LTE',     NULL::numeric, 0::numeric,  'dias', 'BLOQUEA_SALIDA','Vencido: retirar del consumo',             3, 'COMPOSTAJE')
+) AS v
+WHERE NOT EXISTS (SELECT 1 FROM regla_umbrales WHERE regla_id = '20000000-0000-0000-0000-000000000001');
+
+-- 2) TRAZABILIDAD (campos obligatorios del lote)
+INSERT INTO reglas (id, tenant_id, tipo, ambito, ambito_id, nombre, creado_por)
+VALUES ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001',
+        'TRAZABILIDAD', 'GLOBAL', NULL, 'Campos obligatorios', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO regla_umbrales (regla_id, color, operador, valor_min, valor_max, unidad, accion, mensaje, orden, estrategia_circular)
+SELECT * FROM (VALUES
+  ('20000000-0000-0000-0000-000000000002'::uuid, 'VERDE', 'EQ',  0::numeric, NULL::numeric, '-', 'SOLO_ALERTA',    NULL,                                                 0, NULL::text),
+  ('20000000-0000-0000-0000-000000000002'::uuid, 'ROJO',  'GTE', 1::numeric, NULL::numeric, '-', 'BLOQUEA_INGRESO','Lote sin código, proveedor o fecha de vencimiento', 1, NULL::text)
+) AS v
+WHERE NOT EXISTS (SELECT 1 FROM regla_umbrales WHERE regla_id = '20000000-0000-0000-0000-000000000002');
+
+-- 3) CUARENTENA (empaque/observación del auditor → estado_cuarentena)
+--    Restaura "empaque roto → ROJO" del motor viejo, ahora configurable.
+INSERT INTO reglas (id, tenant_id, tipo, ambito, ambito_id, nombre, creado_por)
+VALUES ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001',
+        'CUARENTENA', 'GLOBAL', NULL, 'Estado de cuarentena', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO regla_umbrales (regla_id, color, operador, valor_text, unidad, accion, mensaje, orden, estrategia_circular)
+SELECT * FROM (VALUES
+  ('20000000-0000-0000-0000-000000000003'::uuid, 'VERDE',    'EQ', 'LIBRE',         '-', 'SOLO_ALERTA',    NULL,                                             0, NULL::text),
+  ('20000000-0000-0000-0000-000000000003'::uuid, 'AMARILLO', 'EQ', 'EN_EVALUACION', '-', 'SOLO_ALERTA',    'Daño leve / observación dudosa: revisar',        1, NULL::text),
+  ('20000000-0000-0000-0000-000000000003'::uuid, 'ROJO',     'EQ', 'NO_CONFORME',   '-', 'BLOQUEA_SALIDA', 'Empaque roto / no conforme: retirar del consumo', 2, 'DISPOSICION_CONTROLADA')
+) AS v
+WHERE NOT EXISTS (SELECT 1 FROM regla_umbrales WHERE regla_id = '20000000-0000-0000-0000-000000000003');

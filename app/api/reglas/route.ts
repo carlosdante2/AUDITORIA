@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   let q = supabase
     .from('reglas')
-    .select('id, tipo, ambito, ambito_id, nombre, version, vigente_desde, regla_umbrales(id, color, operador, valor_min, valor_max, valor_text, unidad, accion, mensaje, orden)')
+    .select('id, tipo, ambito, ambito_id, nombre, version, vigente_desde, regla_umbrales(id, color, operador, valor_min, valor_max, valor_text, unidad, accion, mensaje, orden, estrategia_circular)')
     .is('vigente_hasta', null)
     .eq('activa', true)
     .order('tipo', { ascending: true })

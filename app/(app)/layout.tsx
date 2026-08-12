@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
 import {
   LayoutDashboard, Mic, ClipboardList, PackageCheck,
-  Settings2, LogOut, Clock, Users, Building2, Boxes, Bell, Thermometer
+  Settings2, LogOut, Users, Boxes, Bell, Thermometer, SlidersHorizontal, HelpCircle
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode }
@@ -15,7 +15,7 @@ type NavItem = { href: string; label: string; icon: React.ReactNode }
 const NAV: Record<string, NavItem[]> = {
   admin: [
     { href: '/admin',           label: 'Panel',      icon: <Settings2 className="w-5 h-5" /> },
-    { href: '/admin/sedes',     label: 'Sedes',      icon: <Building2 className="w-5 h-5" /> },
+    { href: '/admin/reglas',    label: 'Reglas',     icon: <SlidersHorizontal className="w-5 h-5" /> },
     { href: '/admin/catalogo',  label: 'Catálogo',   icon: <PackageCheck className="w-5 h-5" /> },
     { href: '/admin/pendientes',label: 'Pendientes', icon: <ClipboardList className="w-5 h-5" /> },
     { href: '/admin/usuarios',  label: 'Usuarios',   icon: <Users className="w-5 h-5" /> },
@@ -84,12 +84,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {tenantId && <CatalogSync tenantId={tenantId} />}
 
       {/* Top bar */}
-      <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+      <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10 print:hidden">
         <span className="font-bold text-gray-900 text-base">AuditorIA</span>
         <div className="flex items-center gap-3">
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full capitalize ${rolColor}`}>
             {rol}
           </span>
+          <Link
+            href="/ayuda"
+            aria-label="Ayuda"
+            className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+              pathname === '/ayuda' ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4" />
+            Ayuda
+          </Link>
           <button
             onClick={handleLogout}
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-600 transition-colors font-medium"
@@ -106,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Bottom nav */}
-      <nav className="bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10">
+      <nav className="bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10 print:hidden">
         <div className="flex items-center justify-around max-w-2xl mx-auto">
           {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))

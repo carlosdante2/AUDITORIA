@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal, FolderTree, Bell, Refrigerator } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2, DollarSign, SlidersHorizontal, FolderTree, Bell, Refrigerator, FileText } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -68,10 +68,10 @@ const SECTIONS = [
     bg: 'bg-amber-50 border-amber-200',
   },
   {
-    href: '/admin/criterios',
-    icon: <TrafficCone className="w-6 h-6 text-slate-600" />,
-    title: 'Criterios (semáforo fijo actual)',
-    desc: 'Referencia de las reglas de inocuidad del motor actual verde/amarillo/rojo',
+    href: '/reportes',
+    icon: <FileText className="w-6 h-6 text-slate-600" />,
+    title: 'Reportes HACCP',
+    desc: 'Documento imprimible: temperaturas, no conformidades y cumplimiento por período',
     bg: 'bg-slate-50 border-slate-200',
   },
   {

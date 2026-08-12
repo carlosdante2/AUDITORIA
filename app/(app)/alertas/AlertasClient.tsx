@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Check, CheckCheck, Clock } from 'lucide-react'
+import { Check, CheckCheck, Clock, FileText } from 'lucide-react'
 
 interface Alerta {
   id: string
@@ -61,9 +62,14 @@ export function AlertasClient({ initialAlertas, userId }: { initialAlertas: Aler
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Alertas</h1>
-        <p className="text-sm text-gray-500">Hallazgos del semáforo. Reconoce y cierra según se resuelvan.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Alertas</h1>
+          <p className="text-sm text-gray-500">Hallazgos del semáforo. Reconoce y cierra según se resuelvan.</p>
+        </div>
+        <Link href="/reportes" className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 border border-slate-200 bg-slate-50 rounded-lg px-3 h-9">
+          <FileText className="w-3.5 h-3.5" />Reportes
+        </Link>
       </div>
 
       {/* Tabs */}

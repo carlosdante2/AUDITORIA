@@ -1,117 +1,99 @@
 'use client'
 
-import type { SemaforoOutput } from '@/lib/semaforo'
+import type { ResultadoLote, Color } from '@/lib/reglas-engine'
+import { estrategiaRecomendada, odsDeEstrategia, ESTRATEGIA_LABEL } from '@/lib/economia-circular'
 
 interface SemaforoDisplayProps {
-  resultado: SemaforoOutput
+  resultado: ResultadoLote
+  /** true cuando el color es provisional (evaluado offline, se confirma al sincronizar). */
+  provisional?: boolean
 }
 
-const COLOR_CONFIG = {
-  verde: {
-    bar: 'bg-semaforo-verde',
-    bg: 'bg-semaforo-verde-bg border-semaforo-verde',
-    text: 'text-semaforo-verde',
-    label: 'APTO',
-    emoji: '🟢',
-  },
-  amarillo: {
-    bar: 'bg-semaforo-amarillo',
-    bg: 'bg-semaforo-amarillo-bg border-semaforo-amarillo',
-    text: 'text-semaforo-amarillo',
-    label: 'ALERTA',
-    emoji: '🟡',
-  },
-  rojo: {
-    bar: 'bg-semaforo-rojo',
-    bg: 'bg-semaforo-rojo-bg border-semaforo-rojo',
-    text: 'text-semaforo-rojo',
-    label: 'RIESGO',
-    emoji: '🔴',
-  },
+const COLOR_CONFIG: Record<Color, { bar: string; bg: string; text: string; label: string; emoji: string }> = {
+  VERDE:    { bar: 'bg-green-500',  bg: 'bg-green-50 border-green-300',   text: 'text-green-700',  label: 'APTO',           emoji: '🟢' },
+  AMARILLO: { bar: 'bg-yellow-400', bg: 'bg-yellow-50 border-yellow-300', text: 'text-yellow-700', label: 'ALERTA',         emoji: '🟡' },
+  NARANJA:  { bar: 'bg-orange-500', bg: 'bg-orange-50 border-orange-300', text: 'text-orange-700', label: 'URGENTE',        emoji: '🟠' },
+  ROJO:     { bar: 'bg-red-500',    bg: 'bg-red-50 border-red-300',       text: 'text-red-700',    label: 'RIESGO',         emoji: '🔴' },
+  GRIS:     { bar: 'bg-gray-400',   bg: 'bg-gray-50 border-gray-300',     text: 'text-gray-600',   label: 'INDETERMINADO',  emoji: '⚪' },
 }
 
-const ACCION_LABEL: Record<string, string> = {
-  usar_segun_rotacion_fifo: 'Usar según rotación FIFO',
-  priorizar_uso_inmediato: 'Priorizar uso inmediato',
-  retirar_consumo_humano_disposicion_controlada: 'Retirar — disposición controlada',
-  retirar_consumo_humano_evaluar_valorizacion: 'Retirar — evaluar valorización',
+const MOTIVO_LABEL: Record<string, string> = {
+  SIN_REGLA_CONFIGURADA: 'Sin regla configurada para este caso',
+  SIN_DATO: 'Falta el dato para evaluar',
+  SIN_COBERTURA: 'El valor no está cubierto por la regla',
 }
 
-const ESTRATEGIA_LABEL: Record<string, string> = {
-  redistribucion_interna_o_donacion: 'Redistribución interna o donación',
-  evaluar_compostaje_o_alimentacion_animal_certificada: 'Compostaje o alimentación animal certificada',
-  separar_compostaje_o_reciclaje_empaque: 'Separar: compostaje / reciclaje empaque',
-  disposicion_controlada_sin_valorizacion: 'Disposición controlada',
-}
+export function SemaforoDisplay({ resultado, provisional = false }: SemaforoDisplayProps) {
+  const cfg = COLOR_CONFIG[resultado.color_final]
+  const estrategia = estrategiaRecomendada(resultado)
+  const ods = odsDeEstrategia(estrategia)
 
-export function SemaforoDisplay({ resultado }: SemaforoDisplayProps) {
-  const cfg = COLOR_CONFIG[resultado.color]
+  // Dimensión que determinó el color (la más severa con mensaje/motivo).
+  const dominante = [...resultado.detalle].sort(
+    (a, b) => severidad(b.color) - severidad(a.color),
+  )[0]
+  const razon = dominante?.mensaje || (dominante?.motivo ? MOTIVO_LABEL[dominante.motivo] ?? dominante.motivo : null)
 
   return (
     <div className={`rounded-2xl border-2 overflow-hidden ${cfg.bg}`}>
-      {/* Color bar */}
       <div className={`h-2 w-full ${cfg.bar}`} />
 
       <div className="p-4 space-y-3">
-        {/* Header row */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl leading-none" aria-hidden>{cfg.emoji}</span>
             <span className={`text-xl font-black tracking-wide ${cfg.text}`}>{cfg.label}</span>
           </div>
-          {resultado.dias_restantes !== null && (
-            <span className={`text-sm font-bold ${cfg.text}`}>
-              {diasLabel(resultado.dias_restantes)}
+          {provisional && (
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+              Provisional · se confirma al sincronizar
             </span>
           )}
         </div>
 
-        {/* Razón */}
-        <p className="text-sm text-gray-700 leading-snug font-medium">{resultado.razon}</p>
+        {/* Razón / motivo dominante */}
+        {razon && <p className="text-sm text-gray-700 leading-snug font-medium">{razon}</p>}
 
-        {/* Acción recomendada */}
-        <div className="space-y-0.5">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acción</p>
-          <p className={`text-sm font-semibold ${cfg.text}`}>
-            {ACCION_LABEL[resultado.accion_sugerida] ?? resultado.accion_sugerida}
-          </p>
-        </div>
-
-        {/* Economía circular */}
-        {resultado.estrategia_economia_circular && (
-          <div className="space-y-0.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Economía circular</p>
-            <p className="text-sm text-gray-600">
-              {ESTRATEGIA_LABEL[resultado.estrategia_economia_circular] ?? resultado.estrategia_economia_circular}
-            </p>
+        {/* Bloqueos */}
+        {(resultado.bloqueo_salida || resultado.bloqueo_ingreso) && (
+          <div className="flex flex-wrap gap-1.5">
+            {resultado.bloqueo_salida && (
+              <span className="text-xs font-bold bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full">
+                Bloquea salida
+              </span>
+            )}
+            {resultado.bloqueo_ingreso && (
+              <span className="text-xs font-bold bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full">
+                Bloquea ingreso
+              </span>
+            )}
           </div>
         )}
 
-        {/* ODS chips */}
-        {resultado.ods_relacionados.length > 0 && (
+        {/* Economía circular / valorización */}
+        {estrategia && (
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valorización</p>
+            <p className="text-sm text-gray-700">{ESTRATEGIA_LABEL[estrategia]}</p>
+          </div>
+        )}
+
+        {/* ODS derivados de la estrategia */}
+        {ods.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {resultado.ods_relacionados.map((ods) => (
-              <span
-                key={ods}
-                className="text-[10px] bg-white/70 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full"
-              >
-                {ods}
+            {ods.map((o) => (
+              <span key={o} className="text-[10px] bg-white/70 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">
+                {o}
               </span>
             ))}
           </div>
-        )}
-
-        {/* Estimation notice */}
-        {resultado.metodo_calculo === 'estimado_por_recepcion' && (
-          <p className="text-[10px] text-gray-400 italic">* Vida útil estimada por fecha de recepción</p>
         )}
       </div>
     </div>
   )
 }
 
-function diasLabel(dias: number): string {
-  if (dias === 0) return 'Vence hoy'
-  if (dias < 0) return `Vencido hace ${Math.abs(dias)}d`
-  return `${dias}d restantes`
+function severidad(c: Color): number {
+  return { VERDE: 0, GRIS: 1, AMARILLO: 2, NARANJA: 3, ROJO: 4 }[c]
 }

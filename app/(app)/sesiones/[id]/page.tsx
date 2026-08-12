@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase-server'
 import { getSessionCounts, getSignedUrl } from '@/lib/queries'
 import { SemaforoChip } from '@/components/SemaforoChip'
 import { CloseSessionButton } from './CloseSessionButton'
-import type { SemaforoOutput } from '@/lib/semaforo'
 import Link from 'next/link'
 import { ArrowLeft, Mic, ExternalLink } from 'lucide-react'
 
@@ -15,12 +14,11 @@ interface ProductCount {
   fecha_vencimiento: string | null
   estado_empaque: string
   observacion_visual: string
-  semaforo_color: 'verde' | 'amarillo' | 'rojo'
+  semaforo_color: string
   semaforo_razon: string
   semaforo_accion: string
   semaforo_estrategia_circular: string | null
   semaforo_ods: string[]
-  semaforo_metodo_calculo: 'fecha_documentada' | 'estimado_por_recepcion' | 'no_aplica'
   dias_restantes: number | null
   transcripcion_voz: string | null
   captura_metodo: 'voz' | 'manual'
@@ -29,20 +27,7 @@ interface ProductCount {
   products: { nombre: string; subtipo: string } | null
 }
 
-function toSemaforoOutput(count: ProductCount): SemaforoOutput {
-  return {
-    categoria_asignada: 'perecedero_intermedio',
-    dias_restantes: count.dias_restantes,
-    metodo_calculo: count.semaforo_metodo_calculo,
-    color: count.semaforo_color,
-    razon: count.semaforo_razon,
-    accion_sugerida: count.semaforo_accion,
-    estrategia_economia_circular: count.semaforo_estrategia_circular,
-    ods_relacionados: count.semaforo_ods,
-  }
-}
-
-const COLOR_SORT: Record<string, number> = { rojo: 0, amarillo: 1, verde: 2 }
+const COLOR_SORT: Record<string, number> = { rojo: 0, naranja: 1, amarillo: 2, gris: 3, verde: 4 }
 
 export default async function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -79,8 +64,8 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   )
 
   const colorSummary = counts.reduce(
-    (acc, c) => { acc[c.semaforo_color]++; return acc },
-    { verde: 0, amarillo: 0, rojo: 0 } as Record<string, number>
+    (acc, c) => { acc[c.semaforo_color] = (acc[c.semaforo_color] ?? 0) + 1; return acc },
+    { verde: 0, amarillo: 0, naranja: 0, rojo: 0, gris: 0 } as Record<string, number>
   )
 
   // Prepare counts_summary for CloseSessionButton (Claude haiku input)
@@ -131,9 +116,13 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         <div className="grid grid-cols-3 gap-3">
           {([
             ['rojo', 'Riesgo', 'bg-red-50 border-red-200 text-red-700'],
+            ['naranja', 'Urgente', 'bg-orange-50 border-orange-200 text-orange-700'],
             ['amarillo', 'Alerta', 'bg-yellow-50 border-yellow-200 text-yellow-700'],
             ['verde', 'Aptos', 'bg-green-50 border-green-200 text-green-700'],
-          ] as const).map(([color, label, cls]) => (
+            ['gris', 'Sin dato', 'bg-gray-50 border-gray-200 text-gray-600'],
+          ] as const)
+            .filter(([color]) => (colorSummary[color] ?? 0) > 0 || color === 'rojo' || color === 'amarillo' || color === 'verde')
+            .map(([color, label, cls]) => (
             <div key={color} className={`rounded-2xl border p-4 text-center ${cls}`}>
               <p className="text-3xl font-black tabular-nums">{colorSummary[color] ?? 0}</p>
               <p className="text-sm font-semibold mt-0.5">{label}</p>
@@ -175,7 +164,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
                   {count.fecha_vencimiento && ` · Vence: ${count.fecha_vencimiento}`}
                 </p>
               </div>
-              <SemaforoChip resultado={toSemaforoOutput(count)} compact />
+              <SemaforoChip color={count.semaforo_color} compact />
             </div>
 
             {/* Transcription */}
@@ -210,11 +199,6 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               {count.captura_metodo === 'voz' && (
                 <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-500">
                   voz
-                </span>
-              )}
-              {count.semaforo_metodo_calculo === 'estimado_por_recepcion' && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-500">
-                  estimado
                 </span>
               )}
             </div>

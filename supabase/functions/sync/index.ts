@@ -18,11 +18,15 @@ interface CountPayload {
   estado_empaque: string
   observacion_visual: string
   semaforo_color: string
-  semaforo_razon: string
-  semaforo_accion: string
+  semaforo_razon?: string
+  semaforo_accion?: string
   semaforo_estrategia_circular?: string | null
   semaforo_ods?: string[]
-  semaforo_metodo_calculo: string
+  semaforo_bloqueo_salida?: boolean
+  semaforo_bloqueo_ingreso?: boolean
+  semaforo_detalle?: unknown[]
+  // Legado del motor viejo (opcional):
+  semaforo_metodo_calculo?: string | null
   dias_restantes?: number | null
   transcripcion_voz?: string | null
   captura_metodo?: string
@@ -139,11 +143,14 @@ Deno.serve(async (req: Request) => {
       estado_empaque: count.estado_empaque,
       observacion_visual: count.observacion_visual,
       semaforo_color: count.semaforo_color,
-      semaforo_razon: count.semaforo_razon,
-      semaforo_accion: count.semaforo_accion,
+      semaforo_razon: count.semaforo_razon ?? '',
+      semaforo_accion: count.semaforo_accion ?? '',
       semaforo_estrategia_circular: count.semaforo_estrategia_circular ?? null,
       semaforo_ods: count.semaforo_ods ?? [],
-      semaforo_metodo_calculo: count.semaforo_metodo_calculo,
+      semaforo_bloqueo_salida: count.semaforo_bloqueo_salida ?? false,
+      semaforo_bloqueo_ingreso: count.semaforo_bloqueo_ingreso ?? false,
+      semaforo_detalle: count.semaforo_detalle ?? [],
+      semaforo_metodo_calculo: count.semaforo_metodo_calculo ?? null,
       dias_restantes: count.dias_restantes ?? null,
       transcripcion_voz: count.transcripcion_voz ?? null,
       captura_metodo: count.captura_metodo ?? 'manual',

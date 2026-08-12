@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import type { Regla, TipoRegla } from './reglas-engine'
 
 // ================================================================
 // Types
@@ -10,8 +11,19 @@ export interface ProductCache {
   nombre: string
   unidad_medida: string
   subtipo: string
+  categoria_id: string | null   // necesario para especificidad del motor (§5.2.1)
   requiere_fecha_vencimiento: boolean
   embedding: number[] | null  // Float32Array serialized as plain array
+  updated_at: string
+}
+
+// Copia cacheada de las reglas vigentes del tenant, para evaluar el semáforo
+// offline con el mismo motor que el servidor (spec §5.2.5). Un registro por tenant.
+export interface ReglasCache {
+  tenant_id: string
+  reglas: Regla[]
+  tiposActivos: TipoRegla[]
+  categorias: { id: string; parent_id: string | null }[]
   updated_at: string
 }
 
@@ -60,6 +72,7 @@ class AuditorIADB extends Dexie {
   audioQueue!: EntityTable<AudioQueueItem, 'id'>
   photoQueue!: EntityTable<PhotoQueueItem, 'id'>
   countQueue!: EntityTable<CountQueueItem, 'local_id'>
+  reglasCache!: EntityTable<ReglasCache, 'tenant_id'>
 
   constructor() {
     super('auditoria-ia-v1')
@@ -68,6 +81,10 @@ class AuditorIADB extends Dexie {
       audioQueue:  'id, sessionId, status, recordedAt',
       photoQueue:  'id, tipo, status, tenantId',
       countQueue:  'local_id, session_id, tenant_id, status',
+    })
+    // v2: caché de reglas para semáforo offline (§5.2.5) + categoria_id en products.
+    this.version(2).stores({
+      reglasCache: 'tenant_id',
     })
   }
 }

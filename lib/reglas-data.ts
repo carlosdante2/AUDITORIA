@@ -7,6 +7,7 @@ export async function insertarUmbrales(supabase: SupabaseClient, reglaId: string
     regla_id: reglaId, color: u.color, operador: u.operador,
     valor_min: u.valor_min, valor_max: u.valor_max, valor_text: u.valor_text,
     unidad: u.unidad, accion: u.accion ?? 'SOLO_ALERTA', mensaje: u.mensaje, orden: u.orden ?? i,
+    estrategia_circular: u.estrategia_circular ?? null,
   }))
   await supabase.from('regla_umbrales').insert(rows)
 }
@@ -19,7 +20,7 @@ export async function cargarReglasActivas(
 ): Promise<{ reglas: Regla[]; tiposActivos: TipoRegla[] }> {
   let q = supabase
     .from('reglas')
-    .select('id, tipo, ambito, ambito_id, version, regla_umbrales(color, operador, valor_min, valor_max, valor_text, unidad, accion, mensaje, orden)')
+    .select('id, tipo, ambito, ambito_id, version, regla_umbrales(color, operador, valor_min, valor_max, valor_text, unidad, accion, mensaje, orden, estrategia_circular)')
     .is('vigente_hasta', null)
     .eq('activa', true)
   if (tenantId) q = q.eq('tenant_id', tenantId)
