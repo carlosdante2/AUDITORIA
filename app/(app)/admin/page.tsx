@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -40,11 +40,18 @@ const SECTIONS = [
     bg: 'bg-green-50 border-green-200',
   },
   {
-    href: '/admin/criterios',
-    icon: <TrafficCone className="w-6 h-6 text-rose-600" />,
-    title: 'Criterios del semáforo',
-    desc: 'Ver las reglas de inocuidad (verde/amarillo/rojo) que aplica el sistema',
+    href: '/admin/reglas',
+    icon: <SlidersHorizontal className="w-6 h-6 text-rose-600" />,
+    title: 'Reglas del semáforo',
+    desc: 'Configurar umbrales (vencimiento, trazabilidad, cuarentena, stock) + simulador',
     bg: 'bg-rose-50 border-rose-200',
+  },
+  {
+    href: '/admin/criterios',
+    icon: <TrafficCone className="w-6 h-6 text-slate-600" />,
+    title: 'Criterios (semáforo fijo actual)',
+    desc: 'Referencia de las reglas de inocuidad del motor actual verde/amarillo/rojo',
+    bg: 'bg-slate-50 border-slate-200',
   },
   {
     href: '/admin/costos',
