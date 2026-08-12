@@ -12,12 +12,29 @@ export async function evaluarYMaterializar(
 ): Promise<ResultadoLote | null> {
   const { data: lote } = await supabase
     .from('lotes')
-    .select('id, producto_id, codigo_lote, proveedor_id, fecha_vencimiento, fecha_apertura, estado_cuarentena, cantidad')
+    .select('id, producto_id, equipo_id, codigo_lote, proveedor_id, fecha_vencimiento, fecha_apertura, estado_cuarentena, cantidad')
     .eq('id', loteId).single()
   if (!lote) return null
 
   const { data: prod } = await supabase.from('products').select('categoria_id').eq('id', lote.producto_id).single()
   const categoria_id = (prod?.categoria_id as string | null) ?? null
+
+  // Cadena de frío: última lectura del equipo donde está el lote
+  let temperatura_c: number | null = null
+  let ultima_lectura_ms: number | null = null
+  if (lote.equipo_id) {
+    const { data: lect } = await supabase
+      .from('lecturas_temperatura')
+      .select('valor_c, registrado_en')
+      .eq('equipo_id', lote.equipo_id)
+      .order('registrado_en', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (lect) {
+      temperatura_c = Number(lect.valor_c)
+      ultima_lectura_ms = new Date(lect.registrado_en).getTime()
+    }
+  }
 
   const [{ reglas, tiposActivos }, chain] = await Promise.all([
     cargarReglasActivas(supabase),
@@ -34,6 +51,8 @@ export async function evaluarYMaterializar(
     fecha_apertura: lote.fecha_apertura,
     estado_cuarentena: lote.estado_cuarentena,
     cantidad: Number(lote.cantidad),
+    temperatura_c,
+    ultima_lectura_ms,
   }
   const res = evaluarLote({ lote: loteEval, reglas, tiposActivos, categoriaChain: chain, hoyISO: hoyBogota(now), ahoraMs: now.getTime() })
 
@@ -65,6 +84,18 @@ export async function evaluarYMaterializar(
 export async function reevaluarTenant(supabase: SupabaseClient, tenantId: string, limite = 2000): Promise<number> {
   const { data: lotes } = await supabase
     .from('lotes').select('id').eq('tenant_id', tenantId).eq('activo', true).limit(limite)
+  let n = 0
+  for (const l of lotes ?? []) {
+    await evaluarYMaterializar(supabase, l.id as string, tenantId)
+    n++
+  }
+  return n
+}
+
+// Re-evalúa los lotes de un equipo (al registrar una lectura de temperatura).
+export async function reevaluarEquipo(supabase: SupabaseClient, equipoId: string, tenantId: string): Promise<number> {
+  const { data: lotes } = await supabase
+    .from('lotes').select('id').eq('equipo_id', equipoId).eq('activo', true)
   let n = 0
   for (const l of lotes ?? []) {
     await evaluarYMaterializar(supabase, l.id as string, tenantId)

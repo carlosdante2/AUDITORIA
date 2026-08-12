@@ -11,8 +11,10 @@ export type Color = 'VERDE' | 'AMARILLO' | 'NARANJA' | 'ROJO' | 'GRIS'
 export type Accion = 'SOLO_ALERTA' | 'BLOQUEA_SALIDA' | 'BLOQUEA_INGRESO' | 'FUERZA_CUARENTENA'
 export type Operador = 'GT' | 'GTE' | 'LT' | 'LTE' | 'BETWEEN' | 'EQ' | 'IS_NULL' | 'IN'
 
-// Tipos que Fase 1 evalúa (TEMPERATURA/LECTURA_VENCIDA → Fase 2)
-export const TIPOS_FASE1: TipoRegla[] = ['VENCIMIENTO', 'TRAZABILIDAD', 'CUARENTENA', 'STOCK_MINIMO']
+// Tipos evaluables con extracción implementada (Fase 1 + cadena de frío Fase 2)
+export const TIPOS_EVALUABLES: TipoRegla[] = ['VENCIMIENTO', 'TEMPERATURA', 'LECTURA_VENCIDA', 'TRAZABILIDAD', 'CUARENTENA', 'STOCK_MINIMO']
+// Alias retrocompatible
+export const TIPOS_FASE1 = TIPOS_EVALUABLES
 
 // Unidad válida por tipo (para validación de coherencia)
 export const UNIDAD_POR_TIPO: Record<TipoRegla, string> = {
@@ -50,6 +52,9 @@ export interface LoteEval {
   fecha_apertura: string | null      // ISO
   estado_cuarentena: string
   cantidad: number
+  // Cadena de frío (Fase 2): última lectura del equipo donde está el lote
+  temperatura_c?: number | null      // °C de la última lectura
+  ultima_lectura_ms?: number | null  // timestamp ms de la última lectura
 }
 
 export interface DetalleDimension {
@@ -126,10 +131,17 @@ export function extraerValor(tipo: TipoRegla, lote: LoteEval, hoyISO: string, ah
       return { num: null, text: lote.estado_cuarentena, faltaDato: false, skip: false }
     case 'STOCK_MINIMO':
       return { num: lote.cantidad, text: null, faltaDato: false, skip: false }
-    // Fase 2: requieren lectura de equipo — sin dato aquí
-    case 'TEMPERATURA':
-    case 'LECTURA_VENCIDA':
-      return { num: null, text: null, faltaDato: true, skip: false }
+    case 'TEMPERATURA': {
+      // última temperatura del equipo donde está el lote; sin lectura → GRIS
+      if (lote.temperatura_c == null) return { num: null, text: null, faltaDato: true, skip: false }
+      return { num: lote.temperatura_c, text: null, faltaDato: false, skip: false }
+    }
+    case 'LECTURA_VENCIDA': {
+      // horas transcurridas desde la última lectura; sin lectura → GRIS
+      if (lote.ultima_lectura_ms == null) return { num: null, text: null, faltaDato: true, skip: false }
+      const horas = (ahoraMs - lote.ultima_lectura_ms) / 3600000
+      return { num: horas, text: null, faltaDato: false, skip: false }
+    }
   }
 }
 
