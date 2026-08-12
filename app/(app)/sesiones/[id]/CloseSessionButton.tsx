@@ -66,35 +66,35 @@ export function CloseSessionButton({ sessionId, bodega, counts }: CloseSessionBu
       }
 
       setState('done')
-      setMessage('Sesión cerrada correctamente.')
+      setMessage('Auditoría finalizada.')
       router.refresh()
     } catch {
       setState('error')
-      setMessage('Error al cerrar la sesión. Intenta de nuevo.')
+      setMessage('Error al finalizar. Intenta de nuevo.')
     }
   }
 
   if (state === 'done') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-green-600 font-medium">
+      <span className="inline-flex items-center gap-1.5 text-sm text-green-600 font-semibold">
         ✓ {message}
       </span>
     )
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
+    <div className="flex flex-col items-end gap-1 shrink-0">
       <button
         type="button"
         onClick={closeSession}
         disabled={state === 'closing'}
-        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+        className={`px-4 h-11 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
           state === 'closing'
             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
             : 'bg-red-600 text-white hover:bg-red-700 active:scale-95'
         }`}
       >
-        {state === 'closing' ? 'Cerrando sesión…' : 'Cerrar sesión'}
+        {state === 'closing' ? 'Finalizando…' : 'Finalizar auditoría'}
       </button>
       {state === 'error' && (
         <p className="text-xs text-red-600">{message}</p>

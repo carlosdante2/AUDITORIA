@@ -73,8 +73,8 @@ export default async function SesionesPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Sesiones de auditoría</h1>
-        <p className="text-sm text-gray-500">{enriched.length} sesión{enriched.length !== 1 ? 'es' : ''}</p>
+        <h1 className="text-2xl font-bold text-gray-900">Sesiones de auditoría</h1>
+        <p className="text-sm text-gray-500 mt-0.5">{enriched.length} sesión{enriched.length !== 1 ? 'es' : ''}</p>
       </div>
 
       {enriched.length === 0 && (
@@ -86,7 +86,7 @@ export default async function SesionesPage() {
         </p>
       )}
 
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {enriched.map((session) => {
           const total = session.color_counts.verde + session.color_counts.amarillo + session.color_counts.rojo
           const hasAlerts = session.color_counts.rojo > 0
@@ -95,19 +95,19 @@ export default async function SesionesPage() {
             <li key={session.id}>
               <Link
                 href={`/sesiones/${session.id}`}
-                className="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50/20 transition-colors"
+                className="flex items-center justify-between gap-3 bg-white rounded-2xl border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50/20 active:scale-[0.99] transition-all"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{session.bodega}</p>
+                    <p className="text-base font-semibold text-gray-900 truncate">{session.bodega}</p>
                     {hasAlerts && (
-                      <span className="shrink-0 text-xs px-1.5 py-0.5 bg-red-100 text-red-700 rounded-full font-bold">
+                      <span className="shrink-0 text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-bold">
                         {session.color_counts.rojo} rojo{session.color_counts.rojo > 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3" />
+                  <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                    <Clock className="w-3.5 h-3.5" />
                     {new Date(session.opened_at).toLocaleString('es-CO', {
                       dateStyle: 'short',
                       timeStyle: 'short',
@@ -116,31 +116,31 @@ export default async function SesionesPage() {
                   </p>
 
                   {total > 0 && (
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2.5 flex-wrap">
                       {(['verde', 'amarillo', 'rojo'] as SemaforoColor[]).map((color) => {
                         const count = session.color_counts[color]
                         if (count === 0) return null
                         return (
-                          <span key={color} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${COLOR_BADGE[color]}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${COLOR_DOT[color]}`} />
+                          <span key={color} className={`inline-flex items-center gap-1 text-sm px-2.5 py-0.5 rounded-full font-medium ${COLOR_BADGE[color]}`}>
+                            <span className={`w-2 h-2 rounded-full ${COLOR_DOT[color]}`} />
                             {count}
                           </span>
                         )
                       })}
-                      <span className="text-xs text-gray-400">de {total}</span>
+                      <span className="text-sm text-gray-400">de {total}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 ml-3 shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                     session.estado === 'abierta'
                       ? 'bg-green-100 text-green-700'
                       : 'bg-gray-100 text-gray-500'
                   }`}>
                     {session.estado === 'abierta' ? 'Abierta' : 'Cerrada'}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
                 </div>
               </Link>
             </li>

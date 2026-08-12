@@ -99,15 +99,15 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       <div>
         <Link
           href="/sesiones"
-          className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 mb-3"
+          className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-3 h-9"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-4 h-4" />
           Volver a sesiones
         </Link>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{session.bodega}</h1>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h1 className="text-2xl font-bold text-gray-900">{session.bodega}</h1>
+            <p className="text-sm text-gray-400 mt-1">
               {new Date(session.opened_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}
               {' · '}
               <span className={session.estado === 'abierta' ? 'text-green-600 font-medium' : 'text-gray-500'}>
@@ -134,9 +134,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             ['amarillo', 'Alerta', 'bg-yellow-50 border-yellow-200 text-yellow-700'],
             ['verde', 'Aptos', 'bg-green-50 border-green-200 text-green-700'],
           ] as const).map(([color, label, cls]) => (
-            <div key={color} className={`rounded-xl border p-3 text-center ${cls}`}>
-              <p className="text-2xl font-black">{colorSummary[color] ?? 0}</p>
-              <p className="text-xs font-semibold mt-0.5">{label}</p>
+            <div key={color} className={`rounded-2xl border p-4 text-center ${cls}`}>
+              <p className="text-3xl font-black tabular-nums">{colorSummary[color] ?? 0}</p>
+              <p className="text-sm font-semibold mt-0.5">{label}</p>
             </div>
           ))}
         </div>
@@ -144,9 +144,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
       {/* AI insights */}
       {session.insights_ia && (
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-1.5">
+        <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 space-y-1.5">
           <p className="text-xs font-bold text-purple-500 uppercase tracking-widest">Resumen IA</p>
-          <p className="text-sm text-purple-900 leading-relaxed">{session.insights_ia}</p>
+          <p className="text-base text-purple-900 leading-relaxed">{session.insights_ia}</p>
         </div>
       )}
 
@@ -163,14 +163,14 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         )}
 
         {counts.map((count) => (
-          <div key={count.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+          <div key={count.id} className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
             {/* Product header */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
+                <p className="text-base font-semibold text-gray-900 truncate">
                   {count.products?.nombre ?? 'Producto no encontrado'}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm text-gray-400 mt-0.5">
                   {count.cantidad} {count.unidad_medida}
                   {count.fecha_vencimiento && ` · Vence: ${count.fecha_vencimiento}`}
                 </p>
@@ -181,8 +181,8 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             {/* Transcription */}
             {count.transcripcion_voz && (
               <div className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                <Mic className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-gray-500 italic">&ldquo;{count.transcripcion_voz}&rdquo;</p>
+                <Mic className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-gray-500 italic">&ldquo;{count.transcripcion_voz}&rdquo;</p>
               </div>
             )}
 
@@ -192,28 +192,28 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
                 href={count.foto_evidencia_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline h-9"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="w-4 h-4" />
                 Ver foto de evidencia
               </a>
             )}
 
             {/* Metadata chips */}
             <div className="flex flex-wrap gap-1.5">
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+              <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 capitalize">
                 {count.estado_empaque.replace(/_/g, ' ')}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+              <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 capitalize">
                 {count.observacion_visual.replace(/_/g, ' ')}
               </span>
               {count.captura_metodo === 'voz' && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-500">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-500">
                   voz
                 </span>
               )}
               {count.semaforo_metodo_calculo === 'estimado_por_recepcion' && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-500">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-500">
                   estimado
                 </span>
               )}
@@ -221,9 +221,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
             {/* Supervisor extended view: razón + acción */}
             {isSupervisorOrAdmin && count.semaforo_color !== 'verde' && (
-              <div className="border-t border-gray-100 pt-2 space-y-1">
-                <p className="text-xs text-gray-500">{count.semaforo_razon}</p>
-                <p className="text-xs font-medium text-gray-700">
+              <div className="border-t border-gray-100 pt-3 space-y-1">
+                <p className="text-sm text-gray-500">{count.semaforo_razon}</p>
+                <p className="text-sm font-medium text-gray-700 capitalize">
                   → {count.semaforo_accion.replace(/_/g, ' ')}
                 </p>
               </div>
