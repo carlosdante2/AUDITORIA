@@ -15,27 +15,38 @@ interface Session {
   opened_at: string
 }
 
+interface SeccionOpt { id: string; nombre: string; estado: string }
+interface SedeOpt { id: string; nombre: string; secciones: SeccionOpt[] }
+
 interface CapturaPageClientProps {
   tenantId: string
   initialSessions: Session[]
+  sedes: SedeOpt[]
 }
 
-export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClientProps) {
+export function CapturaPageClient({ tenantId, initialSessions, sedes }: CapturaPageClientProps) {
   const [sessions, setSessions] = useState<Session[]>(initialSessions)
   const [activeSession, setActiveSession] = useState<Session | null>(null)
-  const [bodegaInput, setBodegaInput] = useState('')
+  const [sedeId, setSedeId] = useState('')
+  const [seccionId, setSeccionId] = useState('')
   const [creating, setCreating] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [transcription, setTranscription] = useState<string | undefined>(undefined)
   const [countsSaved, setCountsSaved] = useState(0)
 
+  const selectedSede = sedes.find((s) => s.id === sedeId)
+  const seccionesActivas = (selectedSede?.secciones ?? []).filter((x) => x.estado === 'activo')
+
   async function createSession() {
-    if (!bodegaInput.trim() || creating) return
+    const sede = sedes.find((s) => s.id === sedeId)
+    const seccion = seccionesActivas.find((x) => x.id === seccionId)
+    if (!sede || !seccion || creating) return
     setCreating(true)
+    const bodega = `${sede.nombre} · ${seccion.nombre}`
     const supabase = createClient()
     const { data, error } = await supabase
       .from('audit_sessions')
-      .insert({ tenant_id: tenantId, bodega: bodegaInput.trim() })
+      .insert({ tenant_id: tenantId, bodega, sede_id: sede.id, seccion_id: seccion.id })
       .select('id, bodega, estado, opened_at')
       .single()
 
@@ -44,7 +55,8 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
       const session = data as Session
       setSessions((prev) => [session, ...prev])
       setActiveSession(session)
-      setBodegaInput('')
+      setSedeId('')
+      setSeccionId('')
       setShowForm(false)
     }
   }
@@ -128,22 +140,54 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
       </div>
 
       {/* New session */}
-      {showForm ? (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+      {sedes.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center space-y-1">
+          <p className="text-sm font-bold text-amber-800">No hay sedes configuradas</p>
+          <p className="text-sm text-amber-700">
+            Pide al administrador que configure las sedes y secciones antes de iniciar una auditoría.
+          </p>
+        </div>
+      ) : showForm ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
           <p className="text-sm font-semibold text-gray-700">Nueva sesión de auditoría</p>
-          <input
-            type="text"
-            value={bodegaInput}
-            onChange={(e) => setBodegaInput(e.target.value)}
-            placeholder="Nombre de la bodega (ej. Bodega Principal)"
-            className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onKeyDown={(e) => e.key === 'Enter' && createSession()}
-            autoFocus
-          />
-          <div className="flex gap-2">
+
+          {/* Sede */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700">Sede</label>
+            <select
+              value={sedeId}
+              onChange={(e) => { setSedeId(e.target.value); setSeccionId('') }}
+              className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecciona una sede…</option>
+              {sedes.map((s) => (
+                <option key={s.id} value={s.id}>{s.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sección */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700">Sección</label>
+            <select
+              value={seccionId}
+              onChange={(e) => setSeccionId(e.target.value)}
+              disabled={!sedeId}
+              className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">
+                {!sedeId ? 'Primero elige una sede' : seccionesActivas.length === 0 ? 'Esta sede no tiene secciones' : 'Selecciona una sección…'}
+              </option>
+              {seccionesActivas.map((x) => (
+                <option key={x.id} value={x.id}>{x.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => { setShowForm(false); setSedeId(''); setSeccionId('') }}
               className="flex-1 h-12 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50"
             >
               Cancelar
@@ -151,7 +195,7 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
             <button
               type="button"
               onClick={createSession}
-              disabled={!bodegaInput.trim() || creating}
+              disabled={!sedeId || !seccionId || creating}
               className="flex-1 h-12 rounded-xl bg-blue-600 text-white text-sm font-bold disabled:opacity-50 hover:bg-blue-700 active:scale-[0.98] transition-transform"
             >
               {creating ? 'Creando…' : 'Iniciar sesión'}
@@ -203,7 +247,7 @@ export function CapturaPageClient({ tenantId, initialSessions }: CapturaPageClie
         </div>
       )}
 
-      {sessions.length === 0 && !showForm && (
+      {sessions.length === 0 && !showForm && sedes.length > 0 && (
         <p className="text-sm text-gray-400 text-center py-8">
           No hay sesiones activas. Inicia una nueva para comenzar la auditoría.
         </p>

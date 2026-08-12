@@ -1,9 +1,16 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2 } from 'lucide-react'
 
 const SECTIONS = [
+  {
+    href: '/admin/sedes',
+    icon: <Building2 className="w-6 h-6 text-indigo-600" />,
+    title: 'Sedes y secciones',
+    desc: 'Configurar los almacenes/sedes y sus secciones (cámara fría, almacén seco…)',
+    bg: 'bg-indigo-50 border-indigo-200',
+  },
   {
     href: '/admin/catalogo',
     icon: <Package className="w-6 h-6 text-blue-600" />,

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
 import {
   LayoutDashboard, Mic, ClipboardList, PackageCheck,
-  Settings2, LogOut, Clock, Users
+  Settings2, LogOut, Clock, Users, Building2
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode }
@@ -15,8 +15,8 @@ type NavItem = { href: string; label: string; icon: React.ReactNode }
 const NAV: Record<string, NavItem[]> = {
   admin: [
     { href: '/admin',           label: 'Panel',      icon: <Settings2 className="w-5 h-5" /> },
+    { href: '/admin/sedes',     label: 'Sedes',      icon: <Building2 className="w-5 h-5" /> },
     { href: '/admin/catalogo',  label: 'Catálogo',   icon: <PackageCheck className="w-5 h-5" /> },
-    { href: '/admin/importar',  label: 'Importar',   icon: <Clock className="w-5 h-5" /> },
     { href: '/admin/pendientes',label: 'Pendientes', icon: <ClipboardList className="w-5 h-5" /> },
     { href: '/admin/usuarios',  label: 'Usuarios',   icon: <Users className="w-5 h-5" /> },
   ],
