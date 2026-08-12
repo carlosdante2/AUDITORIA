@@ -12,11 +12,15 @@ interface Product {
   requiere_fecha_vencimiento: boolean
   estado: string
   updated_at: string
+  categoria_id: string | null
 }
+
+interface Categoria { id: string; nombre: string }
 
 interface CatalogoClientProps {
   initialProducts: Product[]
   missingEmbeddings: number
+  categorias: Categoria[]
 }
 
 const VALID_SUBTIPOS = [
@@ -30,7 +34,8 @@ const VALID_SUBTIPOS = [
   'galletas_cereales','leche_en_polvo','cafe_te','azucar_sal',
 ]
 
-export function CatalogoClient({ initialProducts, missingEmbeddings }: CatalogoClientProps) {
+export function CatalogoClient({ initialProducts, missingEmbeddings, categorias }: CatalogoClientProps) {
+  const catNombre = (id: string | null) => categorias.find((c) => c.id === id)?.nombre ?? null
   const [products, setProducts]       = useState<Product[]>(initialProducts)
   const [query, setQuery]             = useState('')
   const [editingId, setEditingId]     = useState<string | null>(null)
@@ -49,7 +54,7 @@ export function CatalogoClient({ initialProducts, missingEmbeddings }: CatalogoC
 
   function startEdit(p: Product) {
     setEditingId(p.id)
-    setEditData({ nombre: p.nombre, unidad_medida: p.unidad_medida, subtipo: p.subtipo })
+    setEditData({ nombre: p.nombre, unidad_medida: p.unidad_medida, subtipo: p.subtipo, categoria_id: p.categoria_id })
   }
 
   async function saveEdit(id: string) {
@@ -57,7 +62,7 @@ export function CatalogoClient({ initialProducts, missingEmbeddings }: CatalogoC
     const supabase = createClient()
     const { error } = await supabase
       .from('products')
-      .update({ nombre: editData.nombre, unidad_medida: editData.unidad_medida, subtipo: editData.subtipo })
+      .update({ nombre: editData.nombre, unidad_medida: editData.unidad_medida, subtipo: editData.subtipo, categoria_id: editData.categoria_id ?? null })
       .eq('id', id)
 
     if (!error) {
@@ -236,6 +241,14 @@ export function CatalogoClient({ initialProducts, missingEmbeddings }: CatalogoC
                     {VALID_SUBTIPOS.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
+                <select
+                  value={editData.categoria_id ?? ''}
+                  onChange={(e) => setEditData((d) => ({ ...d, categoria_id: e.target.value || null }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Sin categoría (para reglas por categoría)</option>
+                  {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -279,7 +292,10 @@ export function CatalogoClient({ initialProducts, missingEmbeddings }: CatalogoC
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{p.nombre}</p>
-                  <p className="text-xs text-gray-400">{p.unidad_medida} · {p.subtipo}</p>
+                  <p className="text-xs text-gray-400">
+                    {p.unidad_medida} · {p.subtipo}
+                    {catNombre(p.categoria_id) && <span className="ml-1 text-indigo-500">· {catNombre(p.categoria_id)}</span>}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
