@@ -5,26 +5,37 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
-import { LayoutDashboard, Mic, ClipboardList, PackageCheck, Settings, LogOut, ChevronDown } from 'lucide-react'
+import {
+  LayoutDashboard, Mic, ClipboardList, PackageCheck,
+  Settings2, LogOut, Clock, Users
+} from 'lucide-react'
 
-const NAV: Record<string, { href: string; label: string; icon: React.ReactNode }[]> = {
+type NavItem = { href: string; label: string; icon: React.ReactNode }
+
+const NAV: Record<string, NavItem[]> = {
   admin: [
-    { href: '/dashboard',       label: 'Dashboard',  icon: <LayoutDashboard className="w-4 h-4" /> },
-    { href: '/captura',         label: 'Captura',    icon: <Mic className="w-4 h-4" /> },
-    { href: '/sesiones',        label: 'Sesiones',   icon: <ClipboardList className="w-4 h-4" /> },
-    { href: '/recepcion',       label: 'Recepción',  icon: <PackageCheck className="w-4 h-4" /> },
-    { href: '/admin/catalogo',  label: 'Config',     icon: <Settings className="w-4 h-4" /> },
+    { href: '/admin',           label: 'Panel',      icon: <Settings2 className="w-5 h-5" /> },
+    { href: '/admin/catalogo',  label: 'Catálogo',   icon: <PackageCheck className="w-5 h-5" /> },
+    { href: '/admin/importar',  label: 'Importar',   icon: <Clock className="w-5 h-5" /> },
+    { href: '/admin/pendientes',label: 'Pendientes', icon: <ClipboardList className="w-5 h-5" /> },
+    { href: '/admin/usuarios',  label: 'Usuarios',   icon: <Users className="w-5 h-5" /> },
   ],
   supervisor: [
-    { href: '/dashboard',  label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { href: '/sesiones',   label: 'Sesiones',  icon: <ClipboardList className="w-4 h-4" /> },
-    { href: '/recepcion',  label: 'Recepción', icon: <PackageCheck className="w-4 h-4" /> },
+    { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { href: '/sesiones',  label: 'Sesiones',  icon: <ClipboardList className="w-5 h-5" /> },
+    { href: '/recepcion', label: 'Recepción', icon: <PackageCheck className="w-5 h-5" /> },
   ],
   auditor: [
-    { href: '/captura',    label: 'Captura',   icon: <Mic className="w-4 h-4" /> },
-    { href: '/sesiones',   label: 'Sesiones',  icon: <ClipboardList className="w-4 h-4" /> },
-    { href: '/recepcion',  label: 'Recepción', icon: <PackageCheck className="w-4 h-4" /> },
+    { href: '/captura',   label: 'Captura',   icon: <Mic className="w-5 h-5" /> },
+    { href: '/sesiones',  label: 'Sesiones',  icon: <ClipboardList className="w-5 h-5" /> },
+    { href: '/recepcion', label: 'Recepción', icon: <PackageCheck className="w-5 h-5" /> },
   ],
+}
+
+const ROL_COLOR: Record<string, string> = {
+  admin:      'bg-red-100 text-red-700',
+  supervisor: 'bg-blue-100 text-blue-700',
+  auditor:    'bg-green-100 text-green-700',
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -62,19 +73,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const navItems = NAV[rol!] ?? []
+  const rolColor = ROL_COLOR[rol!] ?? 'bg-gray-100 text-gray-700'
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {tenantId && <CatalogSync tenantId={tenantId} />}
 
-      {/* Top nav */}
+      {/* Top bar */}
       <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <span className="font-bold text-gray-900">AuditorIA</span>
+        <span className="font-bold text-gray-900 text-base">AuditorIA</span>
         <div className="flex items-center gap-3">
-          <span className="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full capitalize">{rol}</span>
+          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full capitalize ${rolColor}`}>
+            {rol}
+          </span>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-600 transition-colors font-medium"
           >
             <LogOut className="w-4 h-4" />
             Salir
@@ -82,26 +96,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
 
-      {/* Main content */}
-      <main className="max-w-2xl mx-auto w-full px-4 py-6 flex-1">
+      {/* Content */}
+      <main className="max-w-2xl mx-auto w-full px-4 py-6 flex-1 pb-24">
         {children}
       </main>
 
-      {/* Bottom tab nav */}
-      <nav className="bg-white border-t border-gray-200 sticky bottom-0 z-10">
+      {/* Bottom nav */}
+      <nav className="bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10">
         <div className="flex items-center justify-around max-w-2xl mx-auto">
           {navItems.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href + '/')
+            const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center gap-0.5 py-3 px-3 text-[10px] font-medium transition-colors ${
-                  active ? 'text-blue-600' : 'text-gray-400 hover:text-gray-700'
+                className={`flex flex-col items-center gap-0.5 py-3 px-2 text-[10px] font-semibold transition-colors min-w-0 flex-1 ${
+                  active ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
-                {item.icon}
-                {item.label}
+                <span className={active ? 'text-blue-600' : 'text-gray-400'}>{item.icon}</span>
+                <span className="truncate">{item.label}</span>
               </Link>
             )
           })}
