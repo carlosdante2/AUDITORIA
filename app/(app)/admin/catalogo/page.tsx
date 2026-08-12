@@ -10,11 +10,23 @@ export default async function CatalogoPage() {
   const rol = user.app_metadata?.rol as string | undefined
   if (rol !== 'admin') redirect('/dashboard')
 
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, nombre, unidad_medida, subtipo, requiere_fecha_vencimiento, estado, updated_at')
-    .order('nombre', { ascending: true })
-    .limit(500)
+  const [{ data: products }, { count: missingEmbeddings }] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id, nombre, unidad_medida, subtipo, requiere_fecha_vencimiento, estado, updated_at')
+      .order('nombre', { ascending: true })
+      .limit(500),
+    supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .is('embedding', null)
+      .eq('estado', 'activo'),
+  ])
 
-  return <CatalogoClient initialProducts={products ?? []} />
+  return (
+    <CatalogoClient
+      initialProducts={products ?? []}
+      missingEmbeddings={missingEmbeddings ?? 0}
+    />
+  )
 }
