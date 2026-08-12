@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, Edit2, Power } from 'lucide-react'
+import { Search, Edit2, Power, Trash2 } from 'lucide-react'
 
 interface Product {
   id: string
@@ -30,11 +30,13 @@ const VALID_SUBTIPOS = [
 ]
 
 export function CatalogoClient({ initialProducts }: CatalogoClientProps) {
-  const [products, setProducts]   = useState<Product[]>(initialProducts)
-  const [query, setQuery]         = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editData, setEditData]   = useState<Partial<Product>>({})
-  const [saving, setSaving]       = useState(false)
+  const [products, setProducts]       = useState<Product[]>(initialProducts)
+  const [query, setQuery]             = useState('')
+  const [editingId, setEditingId]     = useState<string | null>(null)
+  const [editData, setEditData]       = useState<Partial<Product>>({})
+  const [saving, setSaving]           = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting]       = useState(false)
 
   const filtered = products.filter((p) =>
     p.nombre.toLowerCase().includes(query.toLowerCase()) ||
@@ -61,6 +63,17 @@ export function CatalogoClient({ initialProducts }: CatalogoClientProps) {
     }
     setEditingId(null)
     setSaving(false)
+  }
+
+  async function deleteProduct(id: string) {
+    setDeleting(true)
+    const supabase = createClient()
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    if (!error) {
+      setProducts((prev) => prev.filter((p) => p.id !== id))
+    }
+    setConfirmDeleteId(null)
+    setDeleting(false)
   }
 
   async function toggleEstado(p: Product) {
@@ -143,6 +156,27 @@ export function CatalogoClient({ initialProducts }: CatalogoClientProps) {
                   </button>
                 </div>
               </div>
+            ) : confirmDeleteId === p.id ? (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-red-700 font-medium">¿Eliminar <span className="font-bold">{p.nombre}</span>?</p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => deleteProduct(p.id)}
+                    disabled={deleting}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold disabled:opacity-50"
+                  >
+                    {deleting ? 'Eliminando…' : 'Sí, eliminar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
@@ -161,10 +195,20 @@ export function CatalogoClient({ initialProducts }: CatalogoClientProps) {
                   <button
                     type="button"
                     onClick={() => toggleEstado(p)}
-                    className={`p-1.5 rounded-lg ${p.estado === 'activo' ? 'text-gray-400 hover:text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'}`}
+                    className={`p-1.5 rounded-lg ${p.estado === 'activo' ? 'text-gray-400 hover:text-orange-500 hover:bg-orange-50' : 'text-green-500 hover:bg-green-50'}`}
                     aria-label={p.estado === 'activo' ? 'Desactivar' : 'Activar'}
+                    title={p.estado === 'activo' ? 'Desactivar' : 'Activar'}
                   >
                     <Power className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingId(null); setConfirmDeleteId(p.id) }}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    aria-label="Eliminar"
+                    title="Eliminar producto"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>

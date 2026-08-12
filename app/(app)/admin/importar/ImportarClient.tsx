@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Upload, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Upload, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 
 const REQUIRED_COLS = ['nombre', 'unidad_medida', 'subtipo']
 const VALID_SUBTIPOS = new Set([
@@ -20,6 +20,26 @@ interface RowError { row: number; reason: string }
 interface ImportResult { imported: number; errors: RowError[]; productIds: string[] }
 
 interface ImportarClientProps { tenantId: string }
+
+const TEMPLATE_CSV = `nombre,unidad_medida,subtipo,requiere_fecha_vencimiento
+Leche Entera,litros,lacteo,si
+Pollo Entero,unidades,pollo,si
+Sal Marina,kg,azucar_sal,no
+Arroz Blanco,kg,granos_secos,no
+Filete de Salmon,kg,pescado,si
+Pan de Molde,unidades,panaderia_vida_corta,si
+Aceite de Girasol,litros,aceite_grasa,no
+`
+
+function downloadTemplate() {
+  const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = 'plantilla_catalogo.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export function ImportarClient({ tenantId }: ImportarClientProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -200,14 +220,67 @@ export function ImportarClient({ tenantId }: ImportarClientProps) {
       </div>
 
       {/* Format guide */}
-      <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Formato CSV</p>
-        <pre className="text-xs text-gray-600 overflow-x-auto">
-{`nombre,unidad_medida,subtipo,requiere_fecha_vencimiento
-Leche Entera,litros,lacteo,si
-Sal Marina,kg,azucar_sal,no
-Pollo Entero,unidades,pollo,si`}
-        </pre>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Formato requerido</p>
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            <Download className="w-4 h-4" />
+            Descargar plantilla
+          </button>
+        </div>
+
+        {/* Visual table */}
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-gray-100 text-gray-600 font-bold text-left">
+                <th className="px-3 py-2 border-b border-gray-200">nombre</th>
+                <th className="px-3 py-2 border-b border-gray-200">unidad_medida</th>
+                <th className="px-3 py-2 border-b border-gray-200">subtipo</th>
+                <th className="px-3 py-2 border-b border-gray-200">requiere_fecha_vencimiento</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-gray-700">
+              <tr className="hover:bg-gray-50">
+                <td className="px-3 py-2">Leche Entera</td>
+                <td className="px-3 py-2">litros</td>
+                <td className="px-3 py-2 font-mono text-blue-700">lacteo</td>
+                <td className="px-3 py-2 text-green-700 font-semibold">si</td>
+              </tr>
+              <tr className="hover:bg-gray-50">
+                <td className="px-3 py-2">Pollo Entero</td>
+                <td className="px-3 py-2">unidades</td>
+                <td className="px-3 py-2 font-mono text-blue-700">pollo</td>
+                <td className="px-3 py-2 text-green-700 font-semibold">si</td>
+              </tr>
+              <tr className="hover:bg-gray-50">
+                <td className="px-3 py-2">Sal Marina</td>
+                <td className="px-3 py-2">kg</td>
+                <td className="px-3 py-2 font-mono text-blue-700">azucar_sal</td>
+                <td className="px-3 py-2 text-orange-600 font-semibold">no</td>
+              </tr>
+              <tr className="hover:bg-gray-50">
+                <td className="px-3 py-2">Arroz Blanco</td>
+                <td className="px-3 py-2">kg</td>
+                <td className="px-3 py-2 font-mono text-blue-700">granos_secos</td>
+                <td className="px-3 py-2 text-orange-600 font-semibold">no</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Column descriptions */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-1.5">
+          <p className="text-xs font-bold text-blue-700 mb-1">Columnas</p>
+          <p className="text-xs text-blue-800"><span className="font-semibold">nombre</span> — Nombre del producto tal como aparecerá en el catálogo</p>
+          <p className="text-xs text-blue-800"><span className="font-semibold">unidad_medida</span> — kg, litros, unidades, cajas, porciones…</p>
+          <p className="text-xs text-blue-800"><span className="font-semibold">subtipo</span> — Categoría INVIMA (ver lista completa en la plantilla)</p>
+          <p className="text-xs text-blue-800"><span className="font-semibold">requiere_fecha_vencimiento</span> — <span className="font-mono">si</span> o <span className="font-mono">no</span> (opcional, por defecto <span className="font-mono">si</span>)</p>
+        </div>
       </div>
     </div>
   )

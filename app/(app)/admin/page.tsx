@@ -8,7 +8,7 @@ const SECTIONS = [
     href: '/admin/catalogo',
     icon: <Package className="w-6 h-6 text-blue-600" />,
     title: 'Catálogo de productos',
-    desc: 'Agregar, editar o desactivar productos del inventario',
+    desc: 'Editar, eliminar o activar/desactivar productos del inventario',
     bg: 'bg-blue-50 border-blue-200',
   },
   {

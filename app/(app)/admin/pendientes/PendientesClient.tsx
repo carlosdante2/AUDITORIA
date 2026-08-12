@@ -128,6 +128,16 @@ export function PendientesClient({ initialPending, userId }: PendientesClientPro
         <p className="text-sm text-gray-500">{items.length} en espera de aprobación</p>
       </div>
 
+      {/* Description */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
+        <p className="text-sm font-bold text-amber-800">¿Qué son los productos pendientes?</p>
+        <p className="text-sm text-amber-700 leading-relaxed">
+          Cuando un auditor registra un producto por voz que no se encuentra en el catálogo, el sistema lo guarda aquí para revisión.
+          Como administrador puedes <span className="font-semibold">aprobar</span> el producto (normalizando nombre, unidad y categoría)
+          para agregarlo al catálogo, o <span className="font-semibold">rechazarlo</span> si es un duplicado o error de captura.
+        </p>
+      </div>
+
       {items.length === 0 && (
         <p className="text-sm text-gray-400 text-center py-10">Sin productos pendientes. ✓</p>
       )}
