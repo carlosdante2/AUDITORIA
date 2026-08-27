@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase-server'
-import { CatalogoClient } from './CatalogoClient'
+import { CatalogoTabs } from './CatalogoTabs'
 
 export default async function CatalogoPage() {
   const supabase = await createClient()
@@ -9,6 +10,8 @@ export default async function CatalogoPage() {
 
   const rol = user.app_metadata?.rol as string | undefined
   if (rol !== 'admin') redirect('/dashboard')
+
+  const tenantId = user.app_metadata?.tenant_id as string
 
   const [{ data: products }, { count: missingEmbeddings }, { data: categorias }] = await Promise.all([
     supabase
@@ -23,15 +26,18 @@ export default async function CatalogoPage() {
       .eq('estado', 'activo'),
     supabase
       .from('categorias')
-      .select('id, nombre')
+      .select('id, nombre, parent_id')
       .order('nombre', { ascending: true }),
   ])
 
   return (
-    <CatalogoClient
-      initialProducts={products ?? []}
-      missingEmbeddings={missingEmbeddings ?? 0}
-      categorias={categorias ?? []}
-    />
+    <Suspense>
+      <CatalogoTabs
+        products={products ?? []}
+        missingEmbeddings={missingEmbeddings ?? 0}
+        categorias={categorias ?? []}
+        tenantId={tenantId}
+      />
+    </Suspense>
   )
 }

@@ -197,6 +197,67 @@ describe('VENCIMIENTO — seed §5.7', () => {
   })
 })
 
+// ── §5.5 Obstáculo 2: producto exento de fecha (Res. 5109/2005) ──────
+describe('VENCIMIENTO — producto exento de fecha (Res. 5109/2005)', () => {
+  const evaluar = (o: Partial<LoteEval>) =>
+    evaluarLote({
+      lote: loteBase({ requiere_fecha_vencimiento: false, ...o }),
+      reglas: [reglaVencimiento],
+      tiposActivos: ['VENCIMIENTO'],
+      categoriaChain: [CAT_CONGELADOS],
+      hoyISO: HOY,
+      ahoraMs: AHORA,
+    })
+
+  it('exento y sin fecha → se omite (skip), no GRIS; el lote puede quedar VERDE', () => {
+    const res = evaluar({ fecha_vencimiento: null })
+    expect(res.detalle).toHaveLength(0)   // dimensión omitida
+    expect(res.color_final).toBe('GRIS')  // sin dimensiones → GRIS (no arrastrado por VENCIMIENTO)
+  })
+
+  it('exento pero CON fecha estimada → se evalúa igual', () => {
+    const res = evaluar({ fecha_vencimiento: '2026-09-11' }) // 30 días
+    expect(res.detalle[0].color).toBe('VERDE')
+  })
+
+  it('exento sin fecha, junto a otra dimensión sana → VERDE (no bloqueado por VENCIMIENTO)', () => {
+    const res = evaluarLote({
+      lote: loteBase({ requiere_fecha_vencimiento: false, fecha_vencimiento: null }),
+      reglas: [reglaVencimiento, reglaTemperatura],
+      tiposActivos: ['VENCIMIENTO', 'TEMPERATURA'],
+      categoriaChain: [CAT_CONGELADOS],
+      hoyISO: HOY,
+      ahoraMs: AHORA,
+    })
+    expect(res.color_final).toBe('VERDE')
+  })
+})
+
+// ── §5.5 Obstáculo 1: TRAZABILIDAD no penaliza fecha exenta ──────────
+describe('TRAZABILIDAD — fecha exenta no cuenta como faltante (Res. 5109/2005)', () => {
+  const evaluar = (o: Partial<LoteEval>) =>
+    evaluarLote({
+      lote: loteBase(o),
+      reglas: [reglaTrazabilidad],
+      tiposActivos: ['TRAZABILIDAD'],
+      categoriaChain: [CAT_CONGELADOS],
+      hoyISO: HOY,
+      ahoraMs: AHORA,
+    })
+
+  it('exento sin fecha, con código y proveedor → 0 faltantes → VERDE', () => {
+    const res = evaluar({ requiere_fecha_vencimiento: false, fecha_vencimiento: null })
+    expect(res.detalle[0].valor_evaluado).toBe(0)
+    expect(res.detalle[0].color).toBe('VERDE')
+  })
+
+  it('requiere fecha y no la trae → sigue contando el faltante → ROJO', () => {
+    const res = evaluar({ requiere_fecha_vencimiento: true, fecha_vencimiento: null })
+    expect(res.detalle[0].valor_evaluado).toBe(1)
+    expect(res.detalle[0].color).toBe('ROJO')
+  })
+})
+
 describe('TEMPERATURA — seed §5.7 (cadena de frío)', () => {
   const evaluar = (temperatura_c: number | null) =>
     evaluarLote({

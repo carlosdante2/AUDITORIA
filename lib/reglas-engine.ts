@@ -64,6 +64,9 @@ export interface LoteEval {
   fecha_apertura: string | null      // ISO
   estado_cuarentena: string
   cantidad: number
+  // Res. 5109/2005: frutas/hortalizas frescas están exentas de fecha de vencimiento.
+  // Ausente (undefined) se trata como `true` (requiere fecha) — comportamiento previo.
+  requiere_fecha_vencimiento?: boolean
   // Cadena de frío (Fase 2): última lectura del equipo donde está el lote
   temperatura_c?: number | null      // °C de la última lectura
   ultima_lectura_ms?: number | null  // timestamp ms de la última lectura
@@ -125,7 +128,15 @@ interface Valor { num: number | null; text: string | null; faltaDato: boolean; s
 export function extraerValor(tipo: TipoRegla, lote: LoteEval, hoyISO: string, ahoraMs: number): Valor {
   switch (tipo) {
     case 'VENCIMIENTO': {
-      if (!lote.fecha_vencimiento) return { num: null, text: null, faltaDato: true, skip: false }
+      if (!lote.fecha_vencimiento) {
+        // Producto exento de fecha (Res. 5109/2005): la dimensión NO aplica → skip
+        // (como POST_APERTURA sin apertura), en vez de cortar a GRIS y arrastrar todo
+        // el lote fuera de VERDE por un dato que la norma no exige. Si la fecha es
+        // obligatoria, el faltante es real → GRIS.
+        if (lote.requiere_fecha_vencimiento === false) return { num: null, text: null, faltaDato: false, skip: true }
+        return { num: null, text: null, faltaDato: true, skip: false }
+      }
+      // Si hay fecha (incluida una estimada), se evalúa siempre, aunque el producto sea exento.
       return { num: diffDays(hoyISO, lote.fecha_vencimiento), text: null, faltaDato: false, skip: false }
     }
     case 'POST_APERTURA': {
@@ -137,7 +148,10 @@ export function extraerValor(tipo: TipoRegla, lote: LoteEval, hoyISO: string, ah
       let faltantes = 0
       if (!lote.codigo_lote) faltantes++
       if (!lote.proveedor_id) faltantes++
-      if (!lote.fecha_vencimiento) faltantes++
+      // La fecha solo cuenta como faltante si el producto la requiere: la Res. 5109/2005
+      // exime a frutas/hortalizas frescas, que no deben caer en ROJO por no traer una
+      // fecha que la norma no exige.
+      if (lote.requiere_fecha_vencimiento !== false && !lote.fecha_vencimiento) faltantes++
       return { num: faltantes, text: null, faltaDato: false, skip: false }
     }
     case 'CUARENTENA':

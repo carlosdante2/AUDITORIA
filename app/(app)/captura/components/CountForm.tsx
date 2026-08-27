@@ -115,6 +115,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
       fecha_apertura: null,
       estado_cuarentena: mapCuarentena(empaque, obs),
       cantidad: parseFloat(cantidad) || 0,
+      requiere_fecha_vencimiento: product.requiere_fecha_vencimiento,
       temperatura_c: null,
       ultima_lectura_ms: null,
     })
