@@ -1,0 +1,34 @@
+FRESKO — logotipo (propuesta 1b)
+================================
+
+TIPOGRAFÍA
+  Archivo SemiBold (600) — Google Fonts, licencia SIL Open Font License
+  Caja alta, tracking 0.22 em. La "O" en verde Fresco.
+  Descriptor: Archivo Medium (500), tracking 0.30 em.
+
+COLOR
+  Tinta    #26332C   oklch(0.24 0.03 160)   texto del logo, fondos oscuros
+  Fresco   #2FA26F   oklch(0.62 0.15 158)   la O, estado "a tiempo"
+  Fresco+  #6FD3A2   oklch(0.78 0.16 158)   la O sobre fondo oscuro
+  Alerta   #DFA23A   oklch(0.78 0.15 85)    estado "por vencer"
+  Papel    #F4F6F3   oklch(0.965 0.006 140) fondo claro
+  Gris     #A6ADA6   oklch(0.72 0.015 150)  textos secundarios
+
+USO
+  Área de respeto: la altura de la F por cada lado.
+  Tamaño mínimo: 90 px de ancho en digital, 24 mm impreso.
+  Favicon: la F sola, sin tracking, centrada ópticamente.
+  A 16 px el radio de esquina no supera 4 px.
+  El logo nunca usa el color de alerta ni el rojo de "vencido".
+
+ARCHIVOS
+  fresko-logotipo-principal.png    horizontal, fondo transparente
+  fresko-con-descriptor.png        con "VIDA ÚTIL BAJO CONTROL"
+  fresko-apilado.png               versión compacta
+  fresko-negativo.png              para fondos oscuros
+  fresko-monocromo-blanco.png      una tinta, sobre color
+  fresko-icono-256.png             app icon / favicon
+  fresko-icono-verde-176.png       app icon alternativo
+
+Todos los PNG están a 4x. Para vectorial (SVG/EPS) hay que convertir el
+texto a curvas desde Archivo SemiBold; pídemelo y lo preparo.
