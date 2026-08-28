@@ -11,6 +11,8 @@ import {
   LineChart,
   SlidersHorizontal,
   ArrowRight,
+  Phone,
+  Mail,
 } from 'lucide-react'
 
 // Landing pública: presenta qué hace Fresko y enruta al login.
@@ -80,12 +82,20 @@ export default function LandingPage() {
       <header className="sticky top-0 z-30 border-b border-black/5 bg-[#F4F6F3]/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Image src="/fresko-logotipo.png" alt="Fresko" width={150} height={28} priority className="h-7 w-auto" />
-          <Link
-            href="/login"
-            className="rounded-full bg-[#26332C] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2FA26F]"
-          >
-            Iniciar sesión
-          </Link>
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <a
+              href="#contacto"
+              className="hidden rounded-full px-4 py-2 text-sm font-semibold text-[#26332C] transition-colors hover:text-[#2FA26F] sm:inline-block"
+            >
+              Contacto
+            </a>
+            <Link
+              href="/login"
+              className="rounded-full bg-[#26332C] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2FA26F]"
+            >
+              Iniciar sesión
+            </Link>
+          </nav>
         </div>
       </header>
 
@@ -183,6 +193,82 @@ export default function LandingPage() {
                 <p className="mt-2 text-sm leading-relaxed text-[#4a544d]">{r.text}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contacto */}
+      <section id="contacto" className="border-t border-black/5 bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Hablemos</h2>
+            <p className="mt-4 text-lg text-[#4a544d]">
+              Estamos en Colombia y Perú. Escríbenos o llámanos y te mostramos Fresko funcionando.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* Colombia */}
+            <div className="rounded-2xl border border-black/5 bg-[#F4F6F3] p-6">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl" aria-hidden>
+                  🇨🇴
+                </span>
+                <h3 className="text-lg font-semibold">Colombia</h3>
+              </div>
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <a
+                    href="tel:+573202508852"
+                    className="flex items-center gap-3 text-[#26332C] transition-colors hover:text-[#2FA26F]"
+                  >
+                    <Phone className="h-5 w-5 shrink-0 text-[#2FA26F]" />
+                    <span className="font-medium">+57 320 250 8852</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:+573160404533"
+                    className="flex items-center gap-3 text-[#26332C] transition-colors hover:text-[#2FA26F]"
+                  >
+                    <Phone className="h-5 w-5 shrink-0 text-[#2FA26F]" />
+                    <span className="font-medium">+57 316 040 4533</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Perú */}
+            <div className="rounded-2xl border border-black/5 bg-[#F4F6F3] p-6">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl" aria-hidden>
+                  🇵🇪
+                </span>
+                <h3 className="text-lg font-semibold">Perú</h3>
+              </div>
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <a
+                    href="tel:+51906959989"
+                    className="flex items-center gap-3 text-[#26332C] transition-colors hover:text-[#2FA26F]"
+                  >
+                    <Phone className="h-5 w-5 shrink-0 text-[#2FA26F]" />
+                    <span className="font-medium">+51 906 959 989</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Correo */}
+          <div className="mx-auto mt-6 max-w-3xl">
+            <a
+              href="mailto:ctadeo@clarocomunica.com"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-[#26332C] px-6 py-6 text-center text-white transition-colors hover:bg-[#2FA26F] sm:flex-row sm:gap-3"
+            >
+              <Mail className="h-5 w-5 shrink-0" />
+              <span className="text-base font-semibold break-all">ctadeo@clarocomunica.com</span>
+            </a>
           </div>
         </div>
       </section>
