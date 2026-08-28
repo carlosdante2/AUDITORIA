@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Eye, EyeOff, ClipboardCheck } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 
 // Landing por rol: cada perfil arranca donde le corresponde trabajar.
 function destForRol(rol: string | undefined): string {
@@ -43,11 +44,17 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-gray-50 px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 mb-4 shadow-lg shadow-blue-600/20">
-            <ClipboardCheck className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Fresko</h1>
-          <p className="text-base text-gray-500 mt-1">Auditoría de inventario</p>
+          <h1 className="flex justify-center">
+            <Image
+              src="/fresko-logotipo.png"
+              alt="Fresko"
+              width={240}
+              height={44}
+              priority
+              className="h-11 w-auto"
+            />
+          </h1>
+          <p className="text-base text-gray-500 mt-3">Auditoría de inventario</p>
         </div>
 
         <form onSubmit={handleLogin} className="bg-white shadow-xl shadow-gray-200/60 rounded-3xl p-6 space-y-5">
