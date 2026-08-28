@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Fresko',
-  description: 'Auditoría de inventario con semáforo sanitario para hotelería',
+  description: 'Fresko — Vida útil bajo control: semáforo sanitario, captura por voz y auditoría de inventario perecedero para hotelería.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

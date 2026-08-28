@@ -1,7 +1,7 @@
 {
   "name": "Fresko",
   "short_name": "Fresko",
-  "description": "Sistema de auditoría de inventario para hotelería — semáforo sanitario offline",
+  "description": "Vida útil bajo control: semáforo sanitario, captura por voz y auditoría de inventario perecedero para hotelería. Funciona offline.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F4F6F3",

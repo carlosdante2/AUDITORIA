@@ -54,7 +54,7 @@ export default function LoginPage() {
               className="h-11 w-auto"
             />
           </h1>
-          <p className="text-base text-gray-500 mt-3">Auditoría de inventario</p>
+          <p className="text-base text-gray-500 mt-3">Vida útil bajo control</p>
         </div>
 
         <form onSubmit={handleLogin} className="bg-white shadow-xl shadow-gray-200/60 rounded-3xl p-6 space-y-5">
