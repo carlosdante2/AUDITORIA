@@ -1,4 +1,4 @@
-# Implementation Plan: AuditorIA PWA
+# Implementation Plan: Fresko PWA
 
 **Branch**: `001-auditoria-ia` | **Date**: 2026-08-09 | **Spec**: [spec.md](spec.md)
 
@@ -6,7 +6,7 @@
 
 ## Summary
 
-AuditorIA es una PWA multi-tenant de auditoría de inventario para hotelería
+Fresko es una PWA multi-tenant de auditoría de inventario para hotelería
 colombiana (sector A&B, normas INVIMA). Dos módulos: (1) auditoría de campo
 con captura por voz vía Groq Whisper + semáforo sanitario determinista 100%
 offline, y (2) recepción de mercadería por foto de factura con extracción
@@ -100,7 +100,7 @@ specs/001-auditoria-ia/
 ### Source Code (repository root)
 
 ```text
-/                               ← Raíz del proyecto AuditorIA
+/                               ← Raíz del proyecto Fresko
 ├── app/                        ← Next.js App Router
 │   ├── layout.tsx              ← Root layout + offline flush useEffect
 │   ├── sw.ts                   ← Serwist Service Worker entry

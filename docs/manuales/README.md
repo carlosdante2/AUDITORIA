@@ -1,6 +1,6 @@
-# Manuales de usuario — AuditorIA
+# Manuales de usuario — Fresko
 
-AuditorIA es la app de auditoría de inventario de Alimentos y Bebidas. Funciona en el
+Fresko es la app de auditoría de inventario de Alimentos y Bebidas. Funciona en el
 teléfono (instalable como app) y **sirve sin conexión a internet** en el flujo de campo.
 
 Cada persona entra con su correo y contraseña, y ve **solo** las funciones de su rol.

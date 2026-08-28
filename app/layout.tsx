@@ -6,13 +6,13 @@ import { FlushOnMount } from '@/components/FlushOnMount'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AuditorIA',
+  title: 'Fresko',
   description: 'Auditoría de inventario con semáforo sanitario para hotelería',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'AuditorIA',
+    title: 'Fresko',
   },
 }
 

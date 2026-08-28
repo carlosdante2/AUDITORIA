@@ -1,4 +1,4 @@
--- Seed: AuditorIA test data
+-- Seed: Fresko test data
 -- NOTE: Auth users (profiles) must be created via Supabase Dashboard or Auth API.
 -- This seed creates base config + 2 tenants + 10 sample products.
 

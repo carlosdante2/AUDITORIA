@@ -1,4 +1,4 @@
-﻿# Tasks: AuditorIA â€” PWA de AuditorÃ­a de Inventario
+# Tasks: Fresko â€” PWA de AuditorÃ­a de Inventario
 
 **Input**: Design documents from `/specs/001-auditoria-ia/`
 
@@ -23,7 +23,7 @@
 - [x] T001 Initialize Next.js 15 TypeScript project with all dependencies from plan.md (next, serwist, tailwindcss, shadcn/ui, dexie, @supabase/supabase-js, groq-sdk, openai, vitest) â†’ package.json, tsconfig.json
 - [x] T002 [P] Configure TailwindCSS 3 + shadcn/ui (init components) â†’ tailwind.config.ts, components/ui/
 - [x] T003 [P] Configure Serwist PWA (Service Worker App Router mode, precache captura route) â†’ app/sw.ts, app/manifest.json, next.config.ts
-- [x] T004 [P] Initialize Supabase CLI project config (reference AuditorIA project, storage buckets evidence-photos + invoice-photos privados) â†’ supabase/config.toml, .env.local.example
+- [x] T004 [P] Initialize Supabase CLI project config (reference Fresko project, storage buckets evidence-photos + invoice-photos privados) â†’ supabase/config.toml, .env.local.example
 - [x] T005 [P] Configure Vitest for pure TypeScript unit tests (no DOM, no network) â†’ vitest.config.ts
 
 **Checkpoint**: `npm run dev` sin errores + Service Worker registrado en DevTools

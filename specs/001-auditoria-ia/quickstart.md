@@ -1,4 +1,4 @@
-# Quickstart: AuditorIA — Guía de Validación
+# Quickstart: Fresko — Guía de Validación
 
 **Propósito**: Verificar que la implementación cumple los flujos críticos
 de la spec. Esto NO es documentación de instalación de producción.

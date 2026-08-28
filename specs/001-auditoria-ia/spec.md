@@ -1,4 +1,4 @@
-# Feature Specification: AuditorIA — PWA de Auditoría de Inventario
+# Feature Specification: Fresko — PWA de Auditoría de Inventario
 
 **Feature Branch**: `001-auditoria-ia`
 
@@ -8,7 +8,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "PWA multi-tenant de auditoría de inventario llamada AuditorIA con captura por voz, semáforo sanitario/sectorial con IA, recepción de mercadería por foto de factura, evidencia fotográfica offline. Tres roles: Auditor, Supervisor, Admin. Primer sector: Alimentos y Bebidas en hotelería colombiana."
+**Input**: User description: "PWA multi-tenant de auditoría de inventario llamada Fresko con captura por voz, semáforo sanitario/sectorial con IA, recepción de mercadería por foto de factura, evidencia fotográfica offline. Tres roles: Auditor, Supervisor, Admin. Primer sector: Alimentos y Bebidas en hotelería colombiana."
 
 > **Nota de unificación:** este documento fusiona el spec de producto original con el spec técnico del **Motor de Semáforo Sanitario Configurable**. Las secciones 1–4 describen el producto a nivel de requisitos; el **Anexo Técnico** (sección 5) contiene el modelo de datos, el algoritmo de evaluación y la API del motor. La **regla de oro** del motor gobierna todo el semáforo: ningún umbral, rango de temperatura, cantidad de días o color puede estar escrito en el código; todo vive en base de datos y lo define el administrador de cada hotel.
 

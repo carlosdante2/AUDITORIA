@@ -67,7 +67,7 @@ export interface CountQueueItem {
 // Database schema
 // ================================================================
 
-class AuditorIADB extends Dexie {
+class FreskoDB extends Dexie {
   products!: EntityTable<ProductCache, 'id'>
   audioQueue!: EntityTable<AudioQueueItem, 'id'>
   photoQueue!: EntityTable<PhotoQueueItem, 'id'>
@@ -89,4 +89,4 @@ class AuditorIADB extends Dexie {
   }
 }
 
-export const db = new AuditorIADB()
+export const db = new FreskoDB()

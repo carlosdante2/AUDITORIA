@@ -1,4 +1,4 @@
-# Specification Quality Checklist: AuditorIA PWA
+# Specification Quality Checklist: Fresko PWA
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-08-09

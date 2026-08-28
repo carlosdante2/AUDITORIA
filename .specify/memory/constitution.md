@@ -10,11 +10,11 @@ Sync Impact Report
 - Removed sections: ninguna
 - Follow-up TODOs: ninguno
 - Nota: archivo creado en specs/001-auditoria-ia/constitution.md
-  durante la fase de especificación. Al inicializar el repo de AuditorIA,
+  durante la fase de especificación. Al inicializar el repo de Fresko,
   copiar a .specify/memory/constitution.md en ese proyecto.
 -->
 
-# AuditorIA Constitution
+# Fresko Constitution
 
 ## Core Principles
 
@@ -163,7 +163,7 @@ especulativa es deuda de mantenimiento sin retorno.
 ## Governance
 
 Esta constitución prevalece sobre cualquier otra práctica documentada del
-proyecto AuditorIA. Las enmiendas requieren: (1) instrucción o aprobación
+proyecto Fresko. Las enmiendas requieren: (1) instrucción o aprobación
 explícita del dueño del proyecto, (2) actualización de este archivo con
 incremento de versión semántica, y (3) propagación a `SPECKIT_AUDITORIA.md`
 si el cambio afecta los principios base.
@@ -179,7 +179,7 @@ toca datos, auth, lógica de semáforo o Edge Functions. La complejidad
 agregada DEBE justificarse contra el principio IX.
 
 Este archivo vive en `specs/001-auditoria-ia/constitution.md` durante la
-planificación. Al inicializar el repositorio de AuditorIA, copiar a
+planificación. Al inicializar el repositorio de Fresko, copiar a
 `.specify/memory/constitution.md` en ese proyecto.
 
 **Version**: 1.0.0 | **Ratified**: 2026-08-09 | **Last Amended**: 2026-08-09

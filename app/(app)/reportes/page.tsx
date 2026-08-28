@@ -155,7 +155,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
       </section>
 
       <p className="text-[10px] text-gray-400 border-t border-gray-100 pt-4">
-        Documento generado automáticamente por AuditorIA. Los registros de temperatura son inmutables y con hora de servidor; las alertas conservan la versión de la regla con la que se dispararon (trazabilidad auditable).
+        Documento generado automáticamente por Fresko. Los registros de temperatura son inmutables y con hora de servidor; las alertas conservan la versión de la regla con la que se dispararon (trazabilidad auditable).
       </p>
     </div>
   )

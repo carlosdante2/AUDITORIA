@@ -1,6 +1,6 @@
 {
-  "name": "AuditorIA",
-  "short_name": "AuditorIA",
+  "name": "Fresko",
+  "short_name": "Fresko",
   "description": "Sistema de auditoría de inventario para hotelería — semáforo sanitario offline",
   "start_url": "/",
   "display": "standalone",

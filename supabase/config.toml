@@ -1,4 +1,4 @@
-# AuditorIA — Supabase project configuration
+# Fresko — Supabase project configuration
 # Run: supabase link --project-ref <your-project-ref>
 
 [api]
@@ -30,7 +30,7 @@ enabled = true
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://auditoria-ia.vercel.app"]
+additional_redirect_urls = ["https://fresko.lat"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10

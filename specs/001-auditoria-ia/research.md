@@ -1,4 +1,4 @@
-# Research: AuditorIA — Decisiones Técnicas
+# Research: Fresko — Decisiones Técnicas
 
 **Feature**: 001-auditoria-ia
 **Date**: 2026-08-09

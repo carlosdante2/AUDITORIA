@@ -1,5 +1,5 @@
 -- Migration 002: Audit sessions and product counts
--- AuditorIA PWA — Core auditing tables
+-- Fresko PWA — Core auditing tables
 
 -- ================================================================
 -- Audit Sessions (one per bodega/area per audit cycle)

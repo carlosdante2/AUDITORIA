@@ -1,5 +1,5 @@
 -- Migration 001: Initial schema — tenants, sectors, profiles, products
--- AuditorIA PWA — Multi-tenant inventory auditing
+-- Fresko PWA — Multi-tenant inventory auditing
 
 -- Required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

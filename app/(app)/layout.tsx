@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Top bar */}
       <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10 print:hidden">
-        <span className="font-bold text-gray-900 text-base">AuditorIA</span>
+        <span className="font-bold text-gray-900 text-base">Fresko</span>
         <div className="flex items-center gap-3">
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full capitalize ${rolColor}`}>
             {rol}

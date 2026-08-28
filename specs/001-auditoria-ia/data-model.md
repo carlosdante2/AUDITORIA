@@ -1,4 +1,4 @@
-# Data Model: AuditorIA
+# Data Model: Fresko
 
 **Feature**: 001-auditoria-ia
 **Date**: 2026-08-09
