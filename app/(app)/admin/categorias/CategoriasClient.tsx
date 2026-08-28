@@ -39,8 +39,32 @@ export function CategoriasClient({ initialCategorias, tenantId }: Props) {
   }
 
   async function del(id: string) {
-    if (!confirm('¿Eliminar esta categoría?')) return
     setErr(null)
+
+    // Guarda: una categoría con reglas de semáforo asignadas no debe borrarse sin
+    // aviso — la regla quedaría huérfana (ambito_id apuntando a una categoría que
+    // ya no existe) y nunca volvería a aplicarse. Incluye las reglas de sus
+    // subcategorías directas, que se borrarían en cascada al eliminar el padre.
+    const idsAfectados = [id, ...cats.filter((c) => c.parent_id === id).map((c) => c.id)]
+    const { data: reglas, error: reglasErr } = await supabase
+      .from('reglas')
+      .select('tipo')
+      .eq('ambito', 'CATEGORIA')
+      .in('ambito_id', idsAfectados)
+      .is('vigente_hasta', null)
+      .eq('activa', true)
+    if (reglasErr) { setErr(reglasErr.message); return }
+
+    if (reglas && reglas.length > 0) {
+      const tipos = [...new Set(reglas.map((r) => r.tipo))].join(', ')
+      setErr(
+        `No se puede eliminar: esta categoría tiene ${reglas.length} regla(s) de semáforo asignada(s) (${tipos}). ` +
+        'Si la eliminas, esas reglas dejarán de aplicarse. Reasígnalas o elimínalas primero en Reglas del semáforo.'
+      )
+      return
+    }
+
+    if (!confirm('¿Eliminar esta categoría?')) return
     const { error } = await supabase.from('categorias').delete().eq('id', id)
     if (error) setErr('No se puede eliminar: la categoría tiene productos o subcategorías asociadas.')
     else setCats((p) => p.filter((c) => c.id !== id))

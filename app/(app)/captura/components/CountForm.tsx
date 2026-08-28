@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Search, CheckCircle, Camera } from 'lucide-react'
 import { matchByText } from '@/lib/matching'
-import { evaluarSemaforo } from '@/lib/semaforo'
+import { evaluarLoteOffline } from '@/lib/reglas-offline'
+import { estrategiaRecomendada, odsDeEstrategia } from '@/lib/economia-circular'
 import { db } from '@/lib/db'
 import { PhotoCapture } from '@/components/PhotoCapture'
 import { SemaforoDisplay } from './SemaforoDisplay'
-import type { SemaforoOutput } from '@/lib/semaforo'
+import type { ResultadoLote, Color } from '@/lib/reglas-engine'
 import type { MatchCandidate } from '@/lib/matching'
-import type { ProductCache } from '@/lib/db'
 
 interface EquipoOpt { id: string; codigo: string; tipo: string }
 
@@ -28,6 +28,22 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+// El motor configurable no tiene un tipo "empaque/observación". El hallazgo del
+// auditor se traduce a estado_cuarentena, y una regla CUARENTENA (configurable)
+// lo colorea. Cero cableado: el color lo decide la regla del admin.
+function mapCuarentena(empaque: EstadoEmpaque, obs: ObservacionVisual): string {
+  if (empaque === 'roto_abierto_fuga' || obs === 'no_conforme') return 'NO_CONFORME'
+  if (empaque === 'dano_leve' || obs === 'dudoso') return 'EN_EVALUACION'
+  return 'LIBRE'
+}
+
+const SEVERIDAD: Record<Color, number> = { VERDE: 0, GRIS: 1, AMARILLO: 2, NARANJA: 3, ROJO: 4 }
+
+// Dimensión que determinó el color, para persistir razón/acción legibles.
+function dimensionDominante(res: ResultadoLote) {
+  return [...res.detalle].sort((a, b) => SEVERIDAD[b.color] - SEVERIDAD[a.color])[0] ?? null
+}
+
 export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = [], onSaved }: CountFormProps) {
   const [query, setQuery] = useState(initialQuery)
   const [candidates, setCandidates] = useState<MatchCandidate[]>([])
@@ -40,7 +56,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
   const [loteColor, setLoteColor] = useState<string | null>(null)
   const [estadoEmpaque, setEstadoEmpaque] = useState<EstadoEmpaque>('intacto')
   const [observacion, setObservacion] = useState<ObservacionVisual>('normal')
-  const [semaforo, setSemaforo] = useState<SemaforoOutput | null>(null)
+  const [semaforo, setSemaforo] = useState<ResultadoLote | null>(null)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
@@ -80,22 +96,28 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
     computeSemaforo(candidate, fechaVencimiento, fechaRecepcion, estadoEmpaque, observacion)
   }
 
-  function computeSemaforo(
+  async function computeSemaforo(
     product: MatchCandidate | null,
     fv: string,
-    fr: string,
+    _fr: string,
     empaque: EstadoEmpaque,
     obs: ObservacionVisual,
   ) {
     if (!product) { setSemaforo(null); return }
-    const result = evaluarSemaforo({
-      subtipo_producto: product.subtipo,
+    // Semáforo por reglas, evaluado offline con el mismo motor del servidor (§5.2.5).
+    // TEMPERATURA/LECTURA_VENCIDA quedan en GRIS offline; el servidor las resuelve al sincronizar.
+    const result = await evaluarLoteOffline(tenantId, {
+      producto_id: product.productId,
+      categoria_id: product.categoria_id,
+      codigo_lote: codigoLote || null,
+      proveedor_id: null,
       fecha_vencimiento: fv || null,
-      fecha_hoy: todayISO(),
-      requiere_fecha_segun_norma: product.requiere_fecha_vencimiento ? 'si' : 'no',
-      estado_empaque: empaque,
-      observacion_visual: obs,
-      fecha_recepcion_o_compra: fr || null,
+      fecha_apertura: null,
+      estado_cuarentena: mapCuarentena(empaque, obs),
+      cantidad: parseFloat(cantidad) || 0,
+      requiere_fecha_vencimiento: product.requiere_fecha_vencimiento,
+      temperatura_c: null,
+      ultima_lectura_ms: null,
     })
     setSemaforo(result)
   }
@@ -136,6 +158,8 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
       setPhotoQueued(true)
     }
 
+    const dominante = semaforo ? dimensionDominante(semaforo) : null
+    const estrategia = semaforo ? estrategiaRecomendada(semaforo) : null
     await db.countQueue.add({
       local_id: localId,
       session_id: sessionId,
@@ -151,12 +175,15 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
         fecha_recepcion_o_compra: fechaRecepcion || null,
         estado_empaque: estadoEmpaque,
         observacion_visual: observacion,
-        semaforo_color: semaforo?.color ?? 'verde',
-        semaforo_razon: semaforo?.razon ?? '',
-        semaforo_accion: semaforo?.accion_sugerida ?? '',
-        semaforo_estrategia_circular: semaforo?.estrategia_economia_circular ?? null,
-        semaforo_ods: semaforo?.ods_relacionados ?? [],
-        metodo_calculo: semaforo?.metodo_calculo ?? 'no_aplica',
+        // Semáforo por reglas configurables (5 colores, minúsculas en persistencia).
+        semaforo_color: (semaforo?.color_final ?? 'GRIS').toLowerCase(),
+        semaforo_razon: dominante?.mensaje ?? '',
+        semaforo_accion: dominante?.accion ?? 'SOLO_ALERTA',
+        semaforo_estrategia_circular: estrategia,
+        semaforo_ods: odsDeEstrategia(estrategia),
+        semaforo_bloqueo_salida: semaforo?.bloqueo_salida ?? false,
+        semaforo_bloqueo_ingreso: semaforo?.bloqueo_ingreso ?? false,
+        semaforo_detalle: semaforo?.detalle ?? [],
         created_at: now,
       },
       status: 'pending',
@@ -383,11 +410,14 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
             </div>
           </div>
 
-          {/* Live semaforo */}
+          {/* Live semaforo (motor de reglas, offline) */}
           {semaforo && (
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Estado sanitario</p>
-              <SemaforoDisplay resultado={semaforo} />
+              <SemaforoDisplay
+                resultado={semaforo}
+                provisional={typeof navigator !== 'undefined' && !navigator.onLine}
+              />
             </div>
           )}
 

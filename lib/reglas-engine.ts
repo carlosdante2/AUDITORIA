@@ -11,6 +11,17 @@ export type Color = 'VERDE' | 'AMARILLO' | 'NARANJA' | 'ROJO' | 'GRIS'
 export type Accion = 'SOLO_ALERTA' | 'BLOQUEA_SALIDA' | 'BLOQUEA_INGRESO' | 'FUERZA_CUARENTENA'
 export type Operador = 'GT' | 'GTE' | 'LT' | 'LTE' | 'BETWEEN' | 'EQ' | 'IS_NULL' | 'IN'
 
+// Ruta de valorización / economía circular del umbral (spec §5.7, decisión 2026-08-12).
+// El admin la elige al configurar la regla; la UI deriva los ODS de aquí.
+export type EstrategiaCircular =
+  | 'REDISTRIBUCION_INTERNA'   // priorizar uso interno antes de que perezca
+  | 'BANCO_ALIMENTOS'          // trasladar a banco de alimentos / institución
+  | 'DONACION'                 // donación a terceros
+  | 'ALIMENTACION_ANIMAL'      // alimentación animal certificada
+  | 'COMPOSTAJE'               // compostaje
+  | 'RECICLAJE_EMPAQUE'        // separar para reciclaje de empaque
+  | 'DISPOSICION_CONTROLADA'   // disposición final sin valorización
+
 // Tipos evaluables con extracción implementada (Fase 1 + cadena de frío Fase 2)
 export const TIPOS_EVALUABLES: TipoRegla[] = ['VENCIMIENTO', 'TEMPERATURA', 'LECTURA_VENCIDA', 'TRAZABILIDAD', 'CUARENTENA', 'STOCK_MINIMO']
 // Alias retrocompatible
@@ -32,6 +43,7 @@ export interface Umbral {
   accion: Accion
   mensaje: string | null
   orden: number
+  estrategia_circular?: EstrategiaCircular | null   // ruta de valorización opcional
 }
 
 export interface Regla {
@@ -52,6 +64,9 @@ export interface LoteEval {
   fecha_apertura: string | null      // ISO
   estado_cuarentena: string
   cantidad: number
+  // Res. 5109/2005: frutas/hortalizas frescas están exentas de fecha de vencimiento.
+  // Ausente (undefined) se trata como `true` (requiere fecha) — comportamiento previo.
+  requiere_fecha_vencimiento?: boolean
   // Cadena de frío (Fase 2): última lectura del equipo donde está el lote
   temperatura_c?: number | null      // °C de la última lectura
   ultima_lectura_ms?: number | null  // timestamp ms de la última lectura
@@ -67,6 +82,7 @@ export interface DetalleDimension {
   umbral_snapshot: Umbral | null
   accion: Accion | null
   mensaje: string | null
+  estrategia_circular: EstrategiaCircular | null   // ruta de valorización del umbral ganador
   motivo?: string   // SIN_REGLA_CONFIGURADA | SIN_DATO | SIN_COBERTURA
 }
 
@@ -112,7 +128,15 @@ interface Valor { num: number | null; text: string | null; faltaDato: boolean; s
 export function extraerValor(tipo: TipoRegla, lote: LoteEval, hoyISO: string, ahoraMs: number): Valor {
   switch (tipo) {
     case 'VENCIMIENTO': {
-      if (!lote.fecha_vencimiento) return { num: null, text: null, faltaDato: true, skip: false }
+      if (!lote.fecha_vencimiento) {
+        // Producto exento de fecha (Res. 5109/2005): la dimensión NO aplica → skip
+        // (como POST_APERTURA sin apertura), en vez de cortar a GRIS y arrastrar todo
+        // el lote fuera de VERDE por un dato que la norma no exige. Si la fecha es
+        // obligatoria, el faltante es real → GRIS.
+        if (lote.requiere_fecha_vencimiento === false) return { num: null, text: null, faltaDato: false, skip: true }
+        return { num: null, text: null, faltaDato: true, skip: false }
+      }
+      // Si hay fecha (incluida una estimada), se evalúa siempre, aunque el producto sea exento.
       return { num: diffDays(hoyISO, lote.fecha_vencimiento), text: null, faltaDato: false, skip: false }
     }
     case 'POST_APERTURA': {
@@ -124,7 +148,10 @@ export function extraerValor(tipo: TipoRegla, lote: LoteEval, hoyISO: string, ah
       let faltantes = 0
       if (!lote.codigo_lote) faltantes++
       if (!lote.proveedor_id) faltantes++
-      if (!lote.fecha_vencimiento) faltantes++
+      // La fecha solo cuenta como faltante si el producto la requiere: la Res. 5109/2005
+      // exime a frutas/hortalizas frescas, que no deben caer en ROJO por no traer una
+      // fecha que la norma no exige.
+      if (lote.requiere_fecha_vencimiento !== false && !lote.fecha_vencimiento) faltantes++
       return { num: faltantes, text: null, faltaDato: false, skip: false }
     }
     case 'CUARENTENA':
@@ -173,18 +200,19 @@ function evaluarDimension(tipo: TipoRegla, regla: Regla, v: Valor): DetalleDimen
   const base = { tipo, valor_evaluado: v.num, valor_text: v.text, regla_id: regla.id, regla_version: regla.version }
 
   if (v.faltaDato) {
-    return { ...base, color: 'GRIS', umbral_snapshot: null, accion: null, mensaje: null, motivo: 'SIN_DATO' }
+    return { ...base, color: 'GRIS', umbral_snapshot: null, accion: null, mensaje: null, estrategia_circular: null, motivo: 'SIN_DATO' }
   }
 
   // Umbrales que hacen match; si varios (solape de borde), gana el más severo
   const matches = regla.umbrales.filter((u) => evaluarUmbral(u, v.num, v.text))
   if (matches.length === 0) {
-    return { ...base, color: 'GRIS', umbral_snapshot: null, accion: null, mensaje: null, motivo: 'SIN_COBERTURA' }
+    return { ...base, color: 'GRIS', umbral_snapshot: null, accion: null, mensaje: null, estrategia_circular: null, motivo: 'SIN_COBERTURA' }
   }
   const ganador = matches.reduce((a, b) => (SEVERIDAD[b.color] > SEVERIDAD[a.color] ? b : a))
   return {
     ...base, color: ganador.color, umbral_snapshot: ganador,
     accion: ganador.accion, mensaje: ganador.mensaje ?? null,
+    estrategia_circular: ganador.estrategia_circular ?? null,
   }
 }
 
@@ -206,7 +234,7 @@ export function evaluarLote(args: {
       detalle.push({
         tipo, color: 'GRIS', valor_evaluado: null, valor_text: null,
         regla_id: null, regla_version: null, umbral_snapshot: null,
-        accion: null, mensaje: null, motivo: 'SIN_REGLA_CONFIGURADA',
+        accion: null, mensaje: null, estrategia_circular: null, motivo: 'SIN_REGLA_CONFIGURADA',
       })
       continue
     }

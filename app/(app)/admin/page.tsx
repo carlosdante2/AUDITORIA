@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2, TrafficCone, DollarSign, SlidersHorizontal, FolderTree, Bell, Refrigerator } from 'lucide-react'
+import { Package, Upload, Clock, Users, ChevronRight, Building2, DollarSign, SlidersHorizontal, Bell, Refrigerator, FileText } from 'lucide-react'
 
 const SECTIONS = [
   {
@@ -15,15 +15,8 @@ const SECTIONS = [
     href: '/admin/catalogo',
     icon: <Package className="w-6 h-6 text-blue-600" />,
     title: 'Catálogo de productos',
-    desc: 'Editar, eliminar, categorizar o activar/desactivar productos',
+    desc: 'Productos y categorías: editar, eliminar, categorizar, activar/desactivar y agrupar para reglas de semáforo',
     bg: 'bg-blue-50 border-blue-200',
-  },
-  {
-    href: '/admin/categorias',
-    icon: <FolderTree className="w-6 h-6 text-indigo-600" />,
-    title: 'Categorías',
-    desc: 'Agrupar productos para asignarles reglas de semáforo por categoría',
-    bg: 'bg-indigo-50 border-indigo-200',
   },
   {
     href: '/admin/equipos',
@@ -68,10 +61,10 @@ const SECTIONS = [
     bg: 'bg-amber-50 border-amber-200',
   },
   {
-    href: '/admin/criterios',
-    icon: <TrafficCone className="w-6 h-6 text-slate-600" />,
-    title: 'Criterios (semáforo fijo actual)',
-    desc: 'Referencia de las reglas de inocuidad del motor actual verde/amarillo/rojo',
+    href: '/reportes',
+    icon: <FileText className="w-6 h-6 text-slate-600" />,
+    title: 'Reportes HACCP',
+    desc: 'Documento imprimible: temperaturas, no conformidades y cumplimiento por período',
     bg: 'bg-slate-50 border-slate-200',
   },
   {

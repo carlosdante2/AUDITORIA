@@ -17,10 +17,13 @@ export async function POST(request: NextRequest) {
 
   // Resolver categoría: la del producto si viene producto_id, si no la explícita
   let categoriaId: string | null = body.categoria_id ?? null
+  // Por defecto exige fecha; el body puede forzarlo para simular productos exentos.
+  let requiereFecha: boolean = body.requiere_fecha_vencimiento ?? true
   if (body.producto_id) {
     const { data: prod } = await supabase
-      .from('products').select('categoria_id').eq('id', body.producto_id).single()
+      .from('products').select('categoria_id, requiere_fecha_vencimiento').eq('id', body.producto_id).single()
     categoriaId = (prod?.categoria_id as string | null) ?? categoriaId
+    if (prod?.requiere_fecha_vencimiento != null) requiereFecha = prod.requiere_fecha_vencimiento as boolean
   }
 
   const [{ reglas, tiposActivos }, chain] = await Promise.all([
@@ -37,6 +40,7 @@ export async function POST(request: NextRequest) {
     fecha_apertura: body.fecha_apertura ?? null,
     estado_cuarentena: body.estado_cuarentena ?? 'LIBRE',
     cantidad: typeof body.cantidad === 'number' ? body.cantidad : 0,
+    requiere_fecha_vencimiento: requiereFecha,
   }
 
   const now = new Date()

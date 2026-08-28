@@ -45,3 +45,13 @@ public/sw.js
 public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
+
+.vercel
+.env*
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json

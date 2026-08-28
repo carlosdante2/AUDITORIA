@@ -26,12 +26,17 @@ export default async function DashboardPage() {
 
   // Aggregate KPIs across all active sessions
   const kpi = sessions.reduce(
-    (acc, s) => { acc.verde += s.verde; acc.amarillo += s.amarillo; acc.rojo += s.rojo; return acc },
-    { verde: 0, amarillo: 0, rojo: 0 }
+    (acc, s) => {
+      acc.verde += s.verde; acc.amarillo += s.amarillo
+      acc.naranja += s.naranja; acc.rojo += s.rojo; acc.gris += s.gris
+      return acc
+    },
+    { verde: 0, amarillo: 0, naranja: 0, rojo: 0, gris: 0 }
   )
-  const totalItems = kpi.verde + kpi.amarillo + kpi.rojo
+  const totalItems = kpi.verde + kpi.amarillo + kpi.naranja + kpi.rojo + kpi.gris
 
-  const redAlerts  = alerts.filter((a) => a.semaforo_color === 'rojo')
+  // Críticas = rojo + naranja (urgente). warnAlerts = amarillo.
+  const redAlerts  = alerts.filter((a) => a.semaforo_color === 'rojo' || a.semaforo_color === 'naranja')
   const warnAlerts = alerts.filter((a) => a.semaforo_color === 'amarillo')
 
   return (

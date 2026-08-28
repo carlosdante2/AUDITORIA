@@ -3,13 +3,11 @@ import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import { Clock, ChevronRight } from 'lucide-react'
 
-type SemaforoColor = 'verde' | 'amarillo' | 'rojo'
+type SemaforoColor = 'verde' | 'amarillo' | 'naranja' | 'rojo' | 'gris'
 
-interface ColorCounts {
-  verde: number
-  amarillo: number
-  rojo: number
-}
+type ColorCounts = Record<SemaforoColor, number>
+
+const emptyCounts = (): ColorCounts => ({ verde: 0, amarillo: 0, naranja: 0, rojo: 0, gris: 0 })
 
 interface Session {
   id: string
@@ -20,16 +18,22 @@ interface Session {
   color_counts: ColorCounts
 }
 
+const COLOR_ORDEN: SemaforoColor[] = ['rojo', 'naranja', 'amarillo', 'verde', 'gris']
+
 const COLOR_BADGE: Record<SemaforoColor, string> = {
   verde: 'bg-green-100 text-green-700',
   amarillo: 'bg-yellow-100 text-yellow-700',
+  naranja: 'bg-orange-100 text-orange-700',
   rojo: 'bg-red-100 text-red-700',
+  gris: 'bg-gray-100 text-gray-600',
 }
 
 const COLOR_DOT: Record<SemaforoColor, string> = {
   verde: 'bg-green-500',
   amarillo: 'bg-yellow-400',
+  naranja: 'bg-orange-500',
   rojo: 'bg-red-500',
+  gris: 'bg-gray-400',
 }
 
 export default async function SesionesPage() {
@@ -57,7 +61,7 @@ export default async function SesionesPage() {
     for (const row of counts ?? []) {
       const { session_id, semaforo_color } = row as { session_id: string; semaforo_color: SemaforoColor }
       if (!colorCountsBySession[session_id]) {
-        colorCountsBySession[session_id] = { verde: 0, amarillo: 0, rojo: 0 }
+        colorCountsBySession[session_id] = emptyCounts()
       }
       if (semaforo_color in colorCountsBySession[session_id]) {
         colorCountsBySession[session_id][semaforo_color]++
@@ -67,7 +71,7 @@ export default async function SesionesPage() {
 
   const enriched: Session[] = (sessions ?? []).map((s) => ({
     ...s,
-    color_counts: colorCountsBySession[s.id] ?? { verde: 0, amarillo: 0, rojo: 0 },
+    color_counts: colorCountsBySession[s.id] ?? emptyCounts(),
   }))
 
   return (
@@ -88,8 +92,9 @@ export default async function SesionesPage() {
 
       <ul className="space-y-2.5">
         {enriched.map((session) => {
-          const total = session.color_counts.verde + session.color_counts.amarillo + session.color_counts.rojo
-          const hasAlerts = session.color_counts.rojo > 0
+          const total = COLOR_ORDEN.reduce((n, c) => n + session.color_counts[c], 0)
+          const criticos = session.color_counts.rojo + session.color_counts.naranja
+          const hasAlerts = criticos > 0
 
           return (
             <li key={session.id}>
@@ -102,7 +107,7 @@ export default async function SesionesPage() {
                     <p className="text-base font-semibold text-gray-900 truncate">{session.bodega}</p>
                     {hasAlerts && (
                       <span className="shrink-0 text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-bold">
-                        {session.color_counts.rojo} rojo{session.color_counts.rojo > 1 ? 's' : ''}
+                        {criticos} crítico{criticos > 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
@@ -117,7 +122,7 @@ export default async function SesionesPage() {
 
                   {total > 0 && (
                     <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                      {(['verde', 'amarillo', 'rojo'] as SemaforoColor[]).map((color) => {
+                      {COLOR_ORDEN.map((color) => {
                         const count = session.color_counts[color]
                         if (count === 0) return null
                         return (

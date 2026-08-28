@@ -16,8 +16,9 @@ export async function evaluarYMaterializar(
     .eq('id', loteId).single()
   if (!lote) return null
 
-  const { data: prod } = await supabase.from('products').select('categoria_id').eq('id', lote.producto_id).single()
+  const { data: prod } = await supabase.from('products').select('categoria_id, requiere_fecha_vencimiento').eq('id', lote.producto_id).single()
   const categoria_id = (prod?.categoria_id as string | null) ?? null
+  const requiere_fecha_vencimiento = (prod?.requiere_fecha_vencimiento as boolean | null) ?? true
 
   // Cadena de frío: última lectura del equipo donde está el lote
   let temperatura_c: number | null = null
@@ -51,6 +52,7 @@ export async function evaluarYMaterializar(
     fecha_apertura: lote.fecha_apertura,
     estado_cuarentena: lote.estado_cuarentena,
     cantidad: Number(lote.cantidad),
+    requiere_fecha_vencimiento,
     temperatura_c,
     ultima_lectura_ms,
   }

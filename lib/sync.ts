@@ -134,7 +134,7 @@ export async function syncCatalog(tenantId: string): Promise<void> {
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, tenant_id, nombre, unidad_medida, subtipo, requiere_fecha_vencimiento, embedding, updated_at')
+    .select('id, tenant_id, nombre, unidad_medida, subtipo, categoria_id, requiere_fecha_vencimiento, embedding, updated_at')
     .eq('tenant_id', tenantId)
     .eq('estado', 'activo')
 
@@ -149,11 +149,31 @@ export async function syncCatalog(tenantId: string): Promise<void> {
       nombre: p.nombre as string,
       unidad_medida: p.unidad_medida as string,
       subtipo: p.subtipo as string,
+      categoria_id: (p.categoria_id as string | null) ?? null,
       requiere_fecha_vencimiento: p.requiere_fecha_vencimiento as boolean,
       embedding: p.embedding as number[] | null,
       updated_at: p.updated_at as string,
     }))
   )
+}
+
+// Descarga las reglas vigentes del tenant a IndexedDB para evaluar el semáforo
+// offline (§5.2.5). Se llama en el arranque y al recuperar conexión.
+export async function syncReglas(tenantId: string): Promise<void> {
+  try {
+    const res = await fetch('/api/reglas/sync')
+    if (!res.ok) return
+    const data = await res.json()
+    await db.reglasCache.put({
+      tenant_id: tenantId,
+      reglas: data.reglas ?? [],
+      tiposActivos: data.tiposActivos ?? [],
+      categorias: data.categorias ?? [],
+      updated_at: data.updated_at ?? new Date().toISOString(),
+    })
+  } catch {
+    // Sin red: se conserva la copia previa; el servidor re-evalúa al sincronizar.
+  }
 }
 
 export async function flushAll(): Promise<void> {

@@ -4,6 +4,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "crons": [
-    { "path": "/api/cron/reevaluar", "schedule": "0 * * * *" }
+    { "path": "/api/cron/reevaluar", "schedule": "0 6 * * *" }
   ]
 }
