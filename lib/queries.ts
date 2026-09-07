@@ -83,8 +83,8 @@ export async function getSessionCounts(supabase: SupabaseClient, sessionId: stri
   const { data } = await supabase
     .from('product_counts')
     .select(`
-      id, local_id, cantidad, unidad_medida, fecha_vencimiento,
-      estado_empaque, observacion_visual,
+      id, local_id, lote_id, cantidad, unidad_medida, fecha_vencimiento,
+      estado_empaque, observacion_visual, comentario,
       semaforo_color, semaforo_razon, semaforo_accion,
       semaforo_estrategia_circular, semaforo_ods,
       semaforo_metodo_calculo, dias_restantes,

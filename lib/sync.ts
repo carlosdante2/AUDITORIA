@@ -48,11 +48,18 @@ export async function flushCountQueue(): Promise<void> {
   if (pending.length === 0) return
 
   try {
+    // La Edge Function `sync` exige JWT (verify_jwt=true en config.toml) y lo usa
+    // para resolver el tenant — sin este header SIEMPRE responde 401 y el conteo
+    // se queda en cola para siempre. Bug preexistente: faltaba este header.
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return // sin sesión válida, no tiene caso intentar — se reintenta en el próximo flush
+
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ counts: pending.map((p) => p.data) }),
       }
     )

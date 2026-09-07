@@ -4,16 +4,20 @@ import { getSessionCounts, getSignedUrl } from '@/lib/queries'
 import { SemaforoChip } from '@/components/SemaforoChip'
 import { CloseSessionButton } from './CloseSessionButton'
 import Link from 'next/link'
-import { ArrowLeft, Mic, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Mic, ExternalLink, Lightbulb, Boxes } from 'lucide-react'
+import { ESTRATEGIA_LABEL } from '@/lib/economia-circular'
+import type { EstrategiaCircular } from '@/lib/reglas-engine'
 
 interface ProductCount {
   id: string
   local_id: string
+  lote_id: string | null
   cantidad: number
   unidad_medida: string
   fecha_vencimiento: string | null
   estado_empaque: string
   observacion_visual: string
+  comentario: string | null
   semaforo_color: string
   semaforo_razon: string
   semaforo_accion: string
@@ -188,6 +192,19 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               </a>
             )}
 
+            {/* Enlace al lote de inventario que generó este conteo (§ unificación
+                product_counts ↔ lotes, migración 019). Ausente si el conteo
+                todavía no sincronizó o falló la creación del lote. */}
+            {count.lote_id && (
+              <Link
+                href={`/inventario?lote=${count.lote_id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline h-9"
+              >
+                <Boxes className="w-4 h-4" />
+                Ver en Inventario
+              </Link>
+            )}
+
             {/* Metadata chips */}
             <div className="flex flex-wrap gap-1.5">
               <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 capitalize">
@@ -203,13 +220,26 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               )}
             </div>
 
-            {/* Supervisor extended view: razón + acción */}
+            {/* Comentario del auditor */}
+            {count.comentario && (
+              <p className="text-sm text-gray-500 italic border-l-2 border-gray-200 pl-3">
+                {count.comentario}
+              </p>
+            )}
+
+            {/* Supervisor extended view: razón + acción + recomendación de valorización */}
             {isSupervisorOrAdmin && count.semaforo_color !== 'verde' && (
               <div className="border-t border-gray-100 pt-3 space-y-1">
                 <p className="text-sm text-gray-500">{count.semaforo_razon}</p>
                 <p className="text-sm font-medium text-gray-700 capitalize">
                   → {count.semaforo_accion.replace(/_/g, ' ')}
                 </p>
+                {count.semaforo_estrategia_circular && (
+                  <div className="flex items-start gap-1.5 text-sm text-gray-700 pt-0.5">
+                    <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" aria-hidden />
+                    <span>{ESTRATEGIA_LABEL[count.semaforo_estrategia_circular as EstrategiaCircular] ?? count.semaforo_estrategia_circular}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
