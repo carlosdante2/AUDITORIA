@@ -147,13 +147,15 @@ Conteos individuales de productos durante una sesión de auditoría.
 | `session_id` | uuid | FK → audit_sessions.id, NOT NULL | - |
 | `tenant_id` | uuid | FK → tenants.id, NOT NULL | Desnormalizado para RLS simple |
 | `producto_id` | uuid | FK → products.id, NOT NULL | - |
+| `lote_id` | uuid | FK → lotes.id, NULL | Enlaza el conteo con el lote de inventario que generó (1:1 — migración 019). Null si el lote aún no se creó/sincronizó |
 | `cantidad` | numeric(10,3) | NOT NULL, CHECK (cantidad >= 0) | - |
 | `unidad_medida` | text | NOT NULL | Copiado del producto al momento del conteo |
 | `fecha_vencimiento` | date | NULL | Null si no aplica según norma |
 | `fecha_recepcion_o_compra` | date | NULL | Para estimar vida útil sin fecha vencimiento |
-| `estado_empaque` | text | NOT NULL | 'intacto' \| 'dano_leve' \| 'roto_abierto_fuga' |
+| `estado_empaque` | text | NOT NULL | 'intacto' \| 'dano_leve' \| 'roto_abierto_fuga' \| 'no_aplica' (producto a granel sin empaque; migración 015) |
 | `observacion_visual` | text | NOT NULL | 'normal' \| 'dudoso' \| 'no_conforme' |
-| `foto_evidencia_url` | text | NULL | URL firmada de Supabase Storage |
+| `comentario` | text | NULL | Nota libre opcional del auditor (migración 015) |
+| `foto_evidencia_url` | text | NULL | URL firmada de Supabase Storage — captura la exige (obligatoria en UI) |
 | `semaforo_color` | text | NOT NULL | 'verde' \| 'amarillo' \| 'rojo' |
 | `semaforo_razon` | text | NOT NULL | Explicación max 150 chars |
 | `semaforo_accion` | text | NOT NULL | Acción en snake_case |

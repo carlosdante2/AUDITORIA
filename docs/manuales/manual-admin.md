@@ -42,6 +42,10 @@ hacer todo lo de supervisor y auditor.
 
 1. **Sedes y secciones** → dónde se guarda el inventario.
 2. **Equipos de frío** → cámaras/neveras (si vas a usar reglas de temperatura).
+   Asigna a cada equipo su **sede y sección reales** (no un texto suelto) para
+   que el auditor sepa exactamente dónde está cada nevera al registrar la
+   temperatura. Si ya tienes equipos creados sin ubicación, edítalos con el
+   ícono de lápiz para asignársela.
 3. **Catálogo** → sube tus productos (a mano o por **Importar CSV**). Columnas:
    nombre, unidad, subtipo sanitario, requiere fecha de vencimiento.
 4. **Categorías** → agrupa productos (ej. "Congelados", "Lácteos").

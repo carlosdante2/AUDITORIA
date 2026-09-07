@@ -29,6 +29,13 @@ Es tu pantalla de arranque. Muestra:
 Las alertas las **dispara el semáforo** cuando un lote alcanza un umbral (amarillo/naranja/rojo).
 Quedan con la **versión de la regla congelada** (auditable: no cambian aunque luego se edite la regla).
 
+**Te enteras al instante**, sin recargar: en cuanto se dispara una alerta nueva —
+por ejemplo, un auditor registra una temperatura fuera de rango en una nevera —
+aparece un aviso emergente en la parte de arriba de la pantalla, estés donde
+estés en la app, y el ícono de **Alertas** en la barra inferior muestra un
+contador en vivo con las que siguen abiertas. Esto es solo para supervisor y
+admin; el auditor no recibe estos avisos.
+
 En **Alertas** las ves en tres pestañas:
 - **Abiertas**: nuevas, sin atender.
 - **Reconocidas**: ya las viste / estás gestionando → botón **Reconocer**.
