@@ -17,12 +17,19 @@ export async function flushAudioQueue(): Promise<void> {
 
     try {
       const formData = new FormData()
-      formData.append('audio', item.blob, `audio.${item.mimeType.split('/')[1] || 'webm'}`)
+      formData.append(
+        'audio',
+        item.blob,
+        `audio.${item.mimeType.split('/')[1] || 'webm'}`
+      )
       formData.append('mimeType', item.mimeType)
       formData.append('local_id', item.id)
       formData.append('language', 'es')
 
-      const res = await fetch('/api/voz', { method: 'POST', body: formData })
+      const res = await fetch('/api/voz', {
+        method: 'POST',
+        body: formData,
+      })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
@@ -48,12 +55,27 @@ export async function flushCountQueue(): Promise<void> {
   if (pending.length === 0) return
 
   try {
+    const supabase = createClient()
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session?.access_token) {
+      throw new Error('AUTH_SESSION_MISSING')
+    }
+
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ counts: pending.map((p) => p.data) }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          counts: pending.map((p) => p.data),
+        }),
       }
     )
 
@@ -63,7 +85,13 @@ export async function flushCountQueue(): Promise<void> {
 
     // Remove successfully processed items (processed + skipped = dedup OK)
     const processedIds = pending
-      .filter((_, i) => !(result.errors ?? []).some((e: { local_id: string }) => e.local_id === pending[i].local_id))
+      .filter(
+        (_, i) =>
+          !(result.errors ?? []).some(
+            (e: { local_id: string }) =>
+              e.local_id === pending[i].local_id
+          )
+      )
       .map((p) => p.local_id)
 
     await db.countQueue.bulkDelete(processedIds)
@@ -106,7 +134,10 @@ export async function flushPhotoQueue(): Promise<void> {
 
       const { error: uploadError } = await supabase.storage
         .from('evidence-photos')
-        .upload(path, item.blob, { contentType: 'image/jpeg', upsert: true })
+        .upload(path, item.blob, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        })
 
       if (uploadError) throw uploadError
 
@@ -134,7 +165,9 @@ export async function syncCatalog(tenantId: string): Promise<void> {
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, tenant_id, nombre, unidad_medida, subtipo, categoria_id, requiere_fecha_vencimiento, embedding, updated_at')
+    .select(
+      'id, tenant_id, nombre, unidad_medida, subtipo, categoria_id, requiere_fecha_vencimiento, embedding, updated_at'
+    )
     .eq('tenant_id', tenantId)
     .eq('estado', 'activo')
 
@@ -142,6 +175,7 @@ export async function syncCatalog(tenantId: string): Promise<void> {
 
   // Bulk replace local catalog — clears stale entries first
   await db.products.where('tenant_id').equals(tenantId).delete()
+
   await db.products.bulkPut(
     products.map((p) => ({
       id: p.id as string,
@@ -162,8 +196,11 @@ export async function syncCatalog(tenantId: string): Promise<void> {
 export async function syncReglas(tenantId: string): Promise<void> {
   try {
     const res = await fetch('/api/reglas/sync')
+
     if (!res.ok) return
+
     const data = await res.json()
+
     await db.reglasCache.put({
       tenant_id: tenantId,
       reglas: data.reglas ?? [],
