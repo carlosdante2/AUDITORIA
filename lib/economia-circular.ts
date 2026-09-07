@@ -14,6 +14,7 @@ export const ESTRATEGIA_LABEL: Record<EstrategiaCircular, string> = {
   COMPOSTAJE: 'Compostaje',
   RECICLAJE_EMPAQUE: 'Separar para reciclaje de empaque',
   DISPOSICION_CONTROLADA: 'Disposición controlada',
+  ESPECIAL_MENU_DIA: 'Transformar en el especial del menú del día',
 }
 
 // ODS derivados de la estrategia (catálogo fijo, no configurable).
@@ -25,6 +26,7 @@ export const ESTRATEGIA_ODS: Record<EstrategiaCircular, string[]> = {
   COMPOSTAJE: ['ODS 12: Producción y consumo responsables', 'ODS 13: Acción por el clima'],
   RECICLAJE_EMPAQUE: ['ODS 12: Producción y consumo responsables'],
   DISPOSICION_CONTROLADA: ['ODS 3: Salud y bienestar'],
+  ESPECIAL_MENU_DIA: ['ODS 12: Producción y consumo responsables'],
 }
 
 const SEVERIDAD: Record<Color, number> = { VERDE: 0, GRIS: 1, AMARILLO: 2, NARANJA: 3, ROJO: 4 }

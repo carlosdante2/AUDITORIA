@@ -21,6 +21,7 @@ export type EstrategiaCircular =
   | 'COMPOSTAJE'               // compostaje
   | 'RECICLAJE_EMPAQUE'        // separar para reciclaje de empaque
   | 'DISPOSICION_CONTROLADA'   // disposición final sin valorización
+  | 'ESPECIAL_MENU_DIA'        // transformar en el especial del menú del día (migración 016)
 
 // Tipos evaluables con extracción implementada (Fase 1 + cadena de frío Fase 2)
 export const TIPOS_EVALUABLES: TipoRegla[] = ['VENCIMIENTO', 'TEMPERATURA', 'LECTURA_VENCIDA', 'TRAZABILIDAD', 'CUARENTENA', 'STOCK_MINIMO']

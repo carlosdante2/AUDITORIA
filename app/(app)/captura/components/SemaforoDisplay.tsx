@@ -1,5 +1,6 @@
 'use client'
 
+import { Lightbulb } from 'lucide-react'
 import type { ResultadoLote, Color } from '@/lib/reglas-engine'
 import { estrategiaRecomendada, odsDeEstrategia, ESTRATEGIA_LABEL } from '@/lib/economia-circular'
 
@@ -71,11 +72,15 @@ export function SemaforoDisplay({ resultado, provisional = false }: SemaforoDisp
           </div>
         )}
 
-        {/* Economía circular / valorización */}
+        {/* Economía circular / valorización — la acción sugerida al auditor
+            para este color, configurada por el admin en la regla ganadora. */}
         {estrategia && (
-          <div className="space-y-0.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valorización</p>
-            <p className="text-sm text-gray-700">{ESTRATEGIA_LABEL[estrategia]}</p>
+          <div className="flex items-start gap-2 bg-white/70 border border-black/5 rounded-xl px-3 py-2">
+            <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" aria-hidden />
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recomendación</p>
+              <p className="text-sm font-semibold text-gray-800">{ESTRATEGIA_LABEL[estrategia]}</p>
+            </div>
           </div>
         )}
 

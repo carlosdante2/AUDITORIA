@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { validarUmbrales, UNIDAD_POR_TIPO, type TipoRegla, type Color, type Umbral, type Accion, type Operador } from '@/lib/reglas-engine'
+import { validarUmbrales, UNIDAD_POR_TIPO, type TipoRegla, type Color, type Umbral, type Accion, type Operador, type EstrategiaCircular } from '@/lib/reglas-engine'
+import { ESTRATEGIA_LABEL } from '@/lib/economia-circular'
 import { Plus, Trash2, FlaskConical, Save, AlertTriangle, Pencil, Grid3x3 } from 'lucide-react'
 
 interface UmbralRow extends Umbral {}
@@ -13,17 +14,56 @@ interface Regla {
 interface Opt { id: string; nombre: string }
 interface Props { initialReglas: Regla[]; categorias: Opt[]; productos: Opt[] }
 
+// Tipos configurables desde el panel: solo vencimiento y temperatura.
+// El motor conserva los demas tipos para reglas ya creadas.
 const TIPOS: { v: TipoRegla; label: string }[] = [
   { v: 'VENCIMIENTO', label: 'Vencimiento (días)' },
   { v: 'TEMPERATURA', label: 'Temperatura (°C)' },
-  { v: 'LECTURA_VENCIDA', label: 'Lectura vencida (horas sin medir)' },
-  { v: 'TRAZABILIDAD', label: 'Trazabilidad (campos faltantes)' },
-  { v: 'CUARENTENA', label: 'Cuarentena (estado)' },
-  { v: 'STOCK_MINIMO', label: 'Stock mínimo (cantidad)' },
 ]
 const COLORES: Color[] = ['VERDE', 'AMARILLO', 'NARANJA', 'ROJO']
 const OPERADORES: Operador[] = ['GT', 'GTE', 'LT', 'LTE', 'BETWEEN', 'EQ', 'IN', 'IS_NULL']
 const ACCIONES: Accion[] = ['SOLO_ALERTA', 'BLOQUEA_SALIDA', 'BLOQUEA_INGRESO', 'FUERZA_CUARENTENA']
+
+// Símbolo matemático cuando existe (más claro que la sigla en inglés);
+// texto corto para los operadores estructurales que no tienen uno.
+const OPERADOR_LABEL: Record<Operador, string> = {
+  GT: '>', GTE: '≥', LT: '<', LTE: '≤', EQ: '=',
+  BETWEEN: 'entre', IN: 'en lista', IS_NULL: 'sin dato',
+}
+const OPERADOR_HELP: Record<Operador, string> = {
+  GT: 'Mayor que — se cumple si el valor es mayor al indicado.',
+  GTE: 'Mayor o igual que.',
+  LT: 'Menor que.',
+  LTE: 'Menor o igual que.',
+  EQ: 'Igual a.',
+  BETWEEN: 'Entre un mínimo y un máximo (ambos incluidos).',
+  IN: 'El valor está en la lista de opciones escritas (separadas por coma).',
+  IS_NULL: 'Se cumple cuando falta el dato (ej. sin fecha de vencimiento).',
+}
+
+// Explica cuándo usar cada acción — se ve al pasar el mouse sobre el select
+// o cada opción (title nativo del navegador).
+const ACCION_HELP: Record<Accion, string> = {
+  SOLO_ALERTA: 'Solo informa al auditor, no bloquea nada. Para avisos tempranos (ej. amarillo).',
+  BLOQUEA_SALIDA: 'El lote no se puede despachar/usar (ej. vencido). Úsala cuando el riesgo es que el producto salga de bodega.',
+  BLOQUEA_INGRESO: 'El lote no se puede recepcionar (ej. trazabilidad incompleta). Úsala para rechazar mercadería al ingresar.',
+  FUERZA_CUARENTENA: 'El producto debe aislarse físicamente ya. La acción más severa — para riesgo activo (ej. cadena de frío rota).',
+}
+
+// Ruta de valorización que se muestra al auditor si este umbral se dispara
+// (economía circular, spec §5.7). Opcional — "Sin ruta" no sugiere nada.
+const ESTRATEGIAS: EstrategiaCircular[] = [
+  'REDISTRIBUCION_INTERNA', 'BANCO_ALIMENTOS', 'ESPECIAL_MENU_DIA', 'DONACION',
+  'ALIMENTACION_ANIMAL', 'COMPOSTAJE', 'RECICLAJE_EMPAQUE', 'DISPOSICION_CONTROLADA',
+]
+
+// Sugerencia inicial al crear un umbral nuevo, según el color — un punto de
+// partida editable, no una regla fija: el admin puede cambiarla o quitarla.
+// ROJO no sugiere nada porque normalmente es bloqueo, no valorización.
+const ESTRATEGIA_SUGERIDA_POR_COLOR: Partial<Record<Color, EstrategiaCircular>> = {
+  AMARILLO: 'REDISTRIBUCION_INTERNA',
+  NARANJA: 'BANCO_ALIMENTOS',
+}
 
 const COLOR_CLS: Record<string, string> = {
   VERDE: 'bg-green-100 text-green-800 border-green-300',
@@ -34,7 +74,11 @@ const COLOR_CLS: Record<string, string> = {
 }
 
 function nuevoUmbral(tipo: TipoRegla, color: Color): UmbralRow {
-  return { color, operador: 'GT', valor_min: null, valor_max: null, valor_text: null, unidad: UNIDAD_POR_TIPO[tipo], accion: 'SOLO_ALERTA', mensaje: null, orden: 0 }
+  return {
+    color, operador: 'GT', valor_min: null, valor_max: null, valor_text: null,
+    unidad: UNIDAD_POR_TIPO[tipo], accion: 'SOLO_ALERTA', mensaje: null, orden: 0,
+    estrategia_circular: ESTRATEGIA_SUGERIDA_POR_COLOR[color] ?? null,
+  }
 }
 
 export function ReglasClient({ initialReglas, categorias, productos }: Props) {
@@ -49,6 +93,13 @@ export function ReglasClient({ initialReglas, categorias, productos }: Props) {
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
   const validacion = useMemo(() => validarUmbrales(tipo, umbrales), [tipo, umbrales])
+
+  // Al editar una regla antigua de un tipo ya no ofrecido, se agrega su opcion
+  // para que el select muestre el tipo real y no uno distinto.
+  const tiposSelect = useMemo(
+    () => (TIPOS.some((t) => t.v === tipo) ? TIPOS : [...TIPOS, { v: tipo, label: tipo }]),
+    [tipo],
+  )
 
   function resetForm() {
     setEditId(null); setTipo('VENCIMIENTO'); setAmbito('GLOBAL'); setAmbitoId(''); setNombre('')
@@ -130,7 +181,7 @@ export function ReglasClient({ initialReglas, categorias, productos }: Props) {
             <select value={tipo} disabled={!!editId}
               onChange={(e) => { const t = e.target.value as TipoRegla; setTipo(t); setUmbrales((p) => p.map((u) => ({ ...u, unidad: UNIDAD_POR_TIPO[t] }))) }}
               className="w-full h-11 rounded-lg border border-gray-300 px-2 text-sm bg-white disabled:bg-gray-100">
-              {TIPOS.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+              {tiposSelect.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
             </select>
           </label>
           <label className="space-y-1">
@@ -174,8 +225,9 @@ export function ReglasClient({ initialReglas, categorias, productos }: Props) {
                   <select value={u.color} onChange={(e) => setU(i, { color: e.target.value as Color })} className="h-9 rounded-lg border border-gray-300 px-1.5 text-xs bg-white text-gray-900">
                     {COLORES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  <select value={u.operador} onChange={(e) => setU(i, { operador: e.target.value as Operador })} className="h-9 rounded-lg border border-gray-300 px-1.5 text-xs bg-white text-gray-900">
-                    {OPERADORES.map((o) => <option key={o} value={o}>{o}</option>)}
+                  <select value={u.operador} onChange={(e) => setU(i, { operador: e.target.value as Operador })}
+                    title={OPERADOR_HELP[u.operador]} className="h-9 rounded-lg border border-gray-300 px-1.5 text-xs bg-white text-gray-900">
+                    {OPERADORES.map((o) => <option key={o} value={o} title={OPERADOR_HELP[o]}>{OPERADOR_LABEL[o]}</option>)}
                   </select>
                   {(u.operador === 'GT' || u.operador === 'GTE' || u.operador === 'BETWEEN' || u.operador === 'EQ') && (
                     <input type="number" value={u.valor_min ?? ''} onChange={(e) => setU(i, { valor_min: e.target.value === '' ? null : Number(e.target.value) })}
@@ -193,11 +245,21 @@ export function ReglasClient({ initialReglas, categorias, productos }: Props) {
                   <button onClick={() => delUmbral(i)} className="ml-auto p-1 text-gray-500 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <select value={u.accion} onChange={(e) => setU(i, { accion: e.target.value as Accion })} className="h-8 rounded-lg border border-gray-300 px-1.5 text-[11px] bg-white text-gray-900">
-                    {ACCIONES.map((a) => <option key={a} value={a}>{a}</option>)}
+                  <select value={u.accion} onChange={(e) => setU(i, { accion: e.target.value as Accion })}
+                    title={ACCION_HELP[u.accion]} className="h-8 rounded-lg border border-gray-300 px-1.5 text-[11px] bg-white text-gray-900">
+                    {ACCIONES.map((a) => <option key={a} value={a} title={ACCION_HELP[a]}>{a}</option>)}
                   </select>
                   <input value={u.mensaje ?? ''} onChange={(e) => setU(i, { mensaje: e.target.value || null })}
                     placeholder="mensaje al usuario (opcional)" className="h-8 flex-1 rounded-lg border border-gray-300 px-2 text-[11px] text-gray-900" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={u.estrategia_circular ?? ''}
+                    onChange={(e) => setU(i, { estrategia_circular: (e.target.value || null) as EstrategiaCircular | null })}
+                    title="Ruta de valorización que se le sugiere al auditor si este umbral se dispara (opcional)."
+                    className="h-8 flex-1 rounded-lg border border-gray-300 px-1.5 text-[11px] bg-white text-gray-900">
+                    <option value="">Sin ruta de valorización</option>
+                    {ESTRATEGIAS.map((e) => <option key={e} value={e}>{ESTRATEGIA_LABEL[e]}</option>)}
+                  </select>
                 </div>
               </div>
             ))}
@@ -244,8 +306,8 @@ export function ReglasClient({ initialReglas, categorias, productos }: Props) {
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {r.regla_umbrales.slice().sort((a, b) => a.orden - b.orden).map((u, i) => (
-                <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full border ${COLOR_CLS[u.color]}`}>
-                  {u.color} {u.operador} {u.valor_text ?? [u.valor_min, u.valor_max].filter((x) => x !== null).join('–')}
+                <span key={i} title={OPERADOR_HELP[u.operador]} className={`text-[11px] px-2 py-0.5 rounded-full border ${COLOR_CLS[u.color]}`}>
+                  {u.color} {OPERADOR_LABEL[u.operador]} {u.valor_text ?? [u.valor_min, u.valor_max].filter((x) => x !== null).join('–')}
                 </span>
               ))}
             </div>
