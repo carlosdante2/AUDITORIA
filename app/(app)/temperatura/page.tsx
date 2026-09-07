@@ -7,12 +7,22 @@ export default async function TemperaturaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: equipos } = await supabase
-    .from('equipos')
-    .select('id, codigo, tipo, ubicacion, lecturas_temperatura(valor_c, registrado_en)')
-    .eq('activo', true)
-    .order('codigo', { ascending: true })
+  // Últimas 10 lecturas por equipo (historial), con quién y cuándo la registró,
+  // más la ubicación real (sede · sección) en vez de un texto libre desconectado.
+  const [{ data: equipos }, { data: perfil }] = await Promise.all([
+    supabase
+      .from('equipos')
+      .select(`
+        id, codigo, tipo, ubicacion, sede_id, seccion_id,
+        sedes(nombre), secciones(nombre),
+        lecturas_temperatura(valor_c, registrado_en, usuario_id, profiles(nombre))
+      `)
+      .eq('activo', true)
+      .order('codigo', { ascending: true })
+      .order('registrado_en', { ascending: false, referencedTable: 'lecturas_temperatura' })
+      .limit(10, { referencedTable: 'lecturas_temperatura' }),
+    supabase.from('profiles').select('nombre').eq('id', user.id).single(),
+  ])
 
-  // última lectura por equipo (la relación viene sin orden garantizado → la resolvemos en cliente)
-  return <TemperaturaClient initialEquipos={equipos ?? []} />
+  return <TemperaturaClient initialEquipos={equipos ?? []} currentUserName={perfil?.nombre ?? 'Tú'} />
 }

@@ -5,20 +5,25 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { CatalogSync } from '@/components/CatalogSync'
+import { useAlertasRealtime } from '@/lib/useAlertasRealtime'
+import { AlertaToast } from '@/components/AlertaToast'
 import {
   LayoutDashboard, Mic, ClipboardList, PackageCheck,
-  Settings2, LogOut, Users, Boxes, Bell, Thermometer, SlidersHorizontal, HelpCircle
+  Settings2, LogOut, Boxes, Bell, Thermometer, SlidersHorizontal, HelpCircle
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ReactNode }
 
+// Los 5 accesos fijos del admin son los de uso diario (monitoreo + captura de
+// catálogo); el resto (Sedes, Equipos, Importar, Usuarios, Reportes, Costos)
+// vive agrupado en el Panel — ver app/(app)/admin/page.tsx.
 const NAV: Record<string, NavItem[]> = {
   admin: [
     { href: '/admin',           label: 'Panel',      icon: <Settings2 className="w-5 h-5" /> },
+    { href: '/alertas',         label: 'Alertas',    icon: <Bell className="w-5 h-5" /> },
     { href: '/admin/reglas',    label: 'Reglas',     icon: <SlidersHorizontal className="w-5 h-5" /> },
     { href: '/admin/catalogo',  label: 'Catálogo',   icon: <PackageCheck className="w-5 h-5" /> },
     { href: '/admin/pendientes',label: 'Pendientes', icon: <ClipboardList className="w-5 h-5" /> },
-    { href: '/admin/usuarios',  label: 'Usuarios',   icon: <Users className="w-5 h-5" /> },
   ],
   supervisor: [
     { href: '/dashboard',  label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -68,6 +73,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.replace('/login')
   }
 
+  // Aviso instantáneo de alertas del semáforo (temperatura, vencimiento, etc.)
+  // vía Supabase Realtime — solo para supervisor/admin (Constitution: los
+  // auditores solo ven lo que capturan). Se llama antes del `if (!ready)` para
+  // no romper el orden de hooks; el hook mismo no hace nada hasta tener tenantId.
+  const puedeVerAlertas = rol === 'admin' || rol === 'supervisor'
+  const { count: alertasCount, toast: alertaToast, dismissToast } = useAlertasRealtime(tenantId, puedeVerAlertas)
+
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -82,6 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {tenantId && <CatalogSync tenantId={tenantId} />}
+      {alertaToast && <AlertaToast toast={alertaToast} onDismiss={dismissToast} />}
 
       {/* Top bar */}
       <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10 print:hidden">
@@ -128,7 +141,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   active ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
-                <span className={active ? 'text-blue-600' : 'text-gray-400'}>{item.icon}</span>
+                <span className={`relative ${active ? 'text-blue-600' : 'text-gray-400'}`}>
+                  {item.icon}
+                  {item.href === '/alertas' && puedeVerAlertas && alertasCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                      {alertasCount > 99 ? '99+' : alertasCount}
+                    </span>
+                  )}
+                </span>
                 <span className="truncate">{item.label}</span>
               </Link>
             )
