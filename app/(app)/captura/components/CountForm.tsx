@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Search, CheckCircle, Camera } from 'lucide-react'
+import { Search, CheckCircle, Camera, ScanLine } from 'lucide-react'
 import { matchByText } from '@/lib/matching'
 import { evaluarLoteOffline } from '@/lib/reglas-offline'
 import { estrategiaRecomendada, odsDeEstrategia } from '@/lib/economia-circular'
@@ -21,8 +21,16 @@ interface CountFormProps {
   onSaved?: (localId: string) => void
 }
 
-type EstadoEmpaque = 'intacto' | 'dano_leve' | 'roto_abierto_fuga'
+type EstadoEmpaque = 'intacto' | 'dano_leve' | 'roto_abierto_fuga' | 'no_aplica'
 type ObservacionVisual = 'normal' | 'dudoso' | 'no_conforme'
+
+// Ejemplos de referencia para que el auditor sepa qué encaja en cada nivel.
+// Documentación únicamente — no afecta el motor de reglas.
+const OBSERVACION_REFERENCIA: Record<ObservacionVisual, string> = {
+  normal: 'Apariencia fresca, color uniforme, textura firme, sin daños visibles.',
+  dudoso: 'Abolladuras, magulladuras puntuales, inicio de maduración avanzada, textura algo blanda, cambio leve de color.',
+  no_conforme: 'Moho / hongos, magulladura extensa, aplastado o reventado, sobremaduro / podrido, mal olor, manchas oscuras extendidas, presencia de insectos o plagas.',
+}
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -31,6 +39,9 @@ function todayISO(): string {
 // El motor configurable no tiene un tipo "empaque/observación". El hallazgo del
 // auditor se traduce a estado_cuarentena, y una regla CUARENTENA (configurable)
 // lo colorea. Cero cableado: el color lo decide la regla del admin.
+// 'no_aplica' (producto sin empaque, ej. fruta/verdura a granel) no matchea
+// ninguna de las dos condiciones de abajo, así que el resultado depende
+// únicamente de observacion_visual — que es donde ese producto sí describe su estado.
 function mapCuarentena(empaque: EstadoEmpaque, obs: ObservacionVisual): string {
   if (empaque === 'roto_abierto_fuga' || obs === 'no_conforme') return 'NO_CONFORME'
   if (empaque === 'dano_leve' || obs === 'dudoso') return 'EN_EVALUACION'
@@ -50,12 +61,18 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
   const [selectedProduct, setSelectedProduct] = useState<MatchCandidate | null>(null)
   const [cantidad, setCantidad] = useState('')
   const [fechaVencimiento, setFechaVencimiento] = useState('')
+  // Fecha detectada por IA en la foto: queda "por confirmar" hasta que el
+  // auditor la revise a propósito — no se guarda a ciegas.
+  const [fechaPorConfirmar, setFechaPorConfirmar] = useState(false)
+  const [leyendoFecha, setLeyendoFecha] = useState(false)
+  const [fechaLecturaMsg, setFechaLecturaMsg] = useState<string | null>(null)
   const [fechaRecepcion, setFechaRecepcion] = useState('')
   const [codigoLote, setCodigoLote] = useState('')
   const [equipoId, setEquipoId] = useState('')
   const [loteColor, setLoteColor] = useState<string | null>(null)
   const [estadoEmpaque, setEstadoEmpaque] = useState<EstadoEmpaque>('intacto')
   const [observacion, setObservacion] = useState<ObservacionVisual>('normal')
+  const [comentario, setComentario] = useState('')
   const [semaforo, setSemaforo] = useState<ResultadoLote | null>(null)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -135,9 +152,40 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
     computeSemaforo(selectedProduct, fv, fr, empaque, obs)
   }
 
+  // Lee la fecha impresa en el empaque a partir de la foto de evidencia ya
+  // tomada (IA, solo en línea). Nunca se guarda a ciegas: queda "por confirmar"
+  // hasta que el auditor la revise a propósito.
+  async function leerFechaDeFoto() {
+    if (!photoBlob || leyendoFecha) return
+    setLeyendoFecha(true)
+    setFechaLecturaMsg(null)
+    try {
+      const formData = new FormData()
+      formData.append('image', photoBlob, 'evidencia.jpg')
+      const res = await fetch('/api/vision/fecha', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (res.ok && data.fecha_vencimiento) {
+        handleFieldChange(setFechaVencimiento, 'fv', data.fecha_vencimiento as string)
+        setFechaPorConfirmar(true)
+      } else {
+        setFechaLecturaMsg('No se detectó una fecha legible en la foto — ingrésala manualmente.')
+      }
+    } catch {
+      setFechaLecturaMsg('Sin conexión para leer la foto — ingresa la fecha manualmente.')
+    }
+    setLeyendoFecha(false)
+  }
+
+  function confirmarFechaSugerida() {
+    setFechaPorConfirmar(false)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!selectedProduct || !cantidad || saving) return
+    // La foto de evidencia es obligatoria: respalda el estado de empaque/observación
+    // visual que declaró el auditor. Una fecha sugerida por IA sin confirmar tampoco
+    // deja guardar — nunca se persiste una fecha que el auditor no revisó.
+    if (!selectedProduct || !cantidad || saving || (!photoBlob && !photoQueued) || fechaPorConfirmar) return
 
     setSaving(true)
     const localId = crypto.randomUUID()
@@ -175,6 +223,12 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
         fecha_recepcion_o_compra: fechaRecepcion || null,
         estado_empaque: estadoEmpaque,
         observacion_visual: observacion,
+        comentario: comentario.trim() || null,
+        // Necesarios para que la Edge Function `sync` pueda crear el lote si
+        // esta captura se hizo offline (§ ver más abajo: no hay red para
+        // llamar /api/lotes ahora mismo, así que estos datos viajan en la cola).
+        codigo_lote: codigoLote || null,
+        equipo_id: equipoId || null,
         // Semáforo por reglas configurables (5 colores, minúsculas en persistencia).
         semaforo_color: (semaforo?.color_final ?? 'GRIS').toLowerCase(),
         semaforo_razon: dominante?.mensaje ?? '',
@@ -192,7 +246,8 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
     })
 
     // Crea el lote y lo evalúa con el motor de reglas configurable (online).
-    // Offline: el conteo queda en cola; el lote se puede crear luego.
+    // Offline: el conteo queda en cola con codigo_lote/equipo_id incluidos —
+    // la Edge Function `sync` crea el lote al sincronizar (ver supabase/functions/sync).
     if (typeof navigator !== 'undefined' && navigator.onLine) {
       try {
         const res = await fetch('/api/lotes', {
@@ -207,7 +262,13 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
             equipo_id: equipoId || null,
           }),
         })
-        if (res.ok) { const d = await res.json(); setLoteColor(d.estado?.color_final ?? null) }
+        if (res.ok) {
+          const d = await res.json()
+          setLoteColor(d.estado?.color_final ?? null)
+          // Enlaza el conteo (todavía en cola local) con el lote recién creado,
+          // antes de que se sincronice — así llega con lote_id ya resuelto.
+          if (d.id) await db.countQueue.update(localId, { data: { ...(await db.countQueue.get(localId))?.data, lote_id: d.id } })
+        }
       } catch { /* offline / falla — no bloquea la captura */ }
     }
 
@@ -222,12 +283,15 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
       setCandidates([])
       setCantidad('')
       setFechaVencimiento('')
+      setFechaPorConfirmar(false)
+      setFechaLecturaMsg(null)
       setFechaRecepcion('')
       setCodigoLote('')
       setEquipoId('')
       setLoteColor(null)
       setEstadoEmpaque('intacto')
       setObservacion('normal')
+      setComentario('')
       setSemaforo(null)
       setSaved(false)
       setPhotoBlob(null)
@@ -235,7 +299,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
     }, 2500)
   }
 
-  const canSubmit = !!selectedProduct && !!cantidad && !saving
+  const canSubmit = !!selectedProduct && !!cantidad && !saving && (!!photoBlob || photoQueued) && !fechaPorConfirmar
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -304,15 +368,37 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
           {/* Fecha vencimiento */}
           {selectedProduct.requiere_fecha_vencimiento && (
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-gray-700">
-                Fecha de vencimiento <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  Fecha de vencimiento <span className="text-red-500">*</span>
+                </label>
+                {photoBlob && (
+                  <button
+                    type="button"
+                    onClick={leerFechaDeFoto}
+                    disabled={leyendoFecha}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 disabled:text-gray-400 shrink-0"
+                  >
+                    <ScanLine className="w-3.5 h-3.5" />
+                    {leyendoFecha ? 'Leyendo…' : 'Leer fecha de la foto'}
+                  </button>
+                )}
+              </div>
               <input
                 type="date"
                 value={fechaVencimiento}
-                onChange={(e) => handleFieldChange(setFechaVencimiento, 'fv', e.target.value)}
+                onChange={(e) => { handleFieldChange(setFechaVencimiento, 'fv', e.target.value); setFechaPorConfirmar(false); setFechaLecturaMsg(null) }}
                 className="w-full px-4 h-12 rounded-xl border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              {fechaPorConfirmar && (
+                <div className="flex items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <p className="text-xs text-amber-700">Sugerida por IA a partir de la foto — verifícala.</p>
+                  <button type="button" onClick={confirmarFechaSugerida} className="text-xs font-bold text-amber-800 underline shrink-0">
+                    Confirmar
+                  </button>
+                </div>
+              )}
+              {fechaLecturaMsg && <p className="text-xs text-gray-400">{fechaLecturaMsg}</p>}
             </div>
           )}
 
@@ -367,11 +453,12 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
           {/* Estado del empaque */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700">Estado del empaque</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {([
                 ['intacto', 'Intacto', 'border-green-300 bg-green-50 text-green-800'],
                 ['dano_leve', 'Daño leve', 'border-yellow-300 bg-yellow-50 text-yellow-800'],
                 ['roto_abierto_fuga', 'Roto / fuga', 'border-red-300 bg-red-50 text-red-800'],
+                ['no_aplica', 'No aplica', 'border-gray-300 bg-gray-100 text-gray-700'],
               ] as const).map(([val, label, activeClass]) => (
                 <button
                   key={val}
@@ -385,6 +472,11 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
                 </button>
               ))}
             </div>
+            {estadoEmpaque === 'no_aplica' && (
+              <p className="text-xs text-gray-400">
+                Para productos a granel sin empaque (papa, tomate, cebolla…). Describe su estado en Observación visual.
+              </p>
+            )}
           </div>
 
           {/* Observación visual */}
@@ -408,6 +500,9 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
                 </button>
               ))}
             </div>
+            {/* Ejemplos de referencia de la opción seleccionada — solo documentación,
+                no afecta el motor de reglas. */}
+            <p className="text-xs text-gray-400">{OBSERVACION_REFERENCIA[observacion]}</p>
           </div>
 
           {/* Live semaforo (motor de reglas, offline) */}
@@ -421,12 +516,12 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
             </div>
           )}
 
-          {/* Photo evidence */}
+          {/* Photo evidence — obligatoria: respalda la observación visual declarada */}
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
               <Camera className="w-4 h-4" />
               Foto de evidencia
-              <span className="font-normal text-gray-400">(opcional)</span>
+              <span className="text-red-500">*</span>
             </label>
             {photoQueued ? (
               <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg">
@@ -443,6 +538,21 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
             )}
           </div>
 
+          {/* Comentario libre */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700">
+              Comentario <span className="font-normal text-gray-400">(opcional)</span>
+            </label>
+            <textarea
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              placeholder="Notas adicionales sobre este producto…"
+              rows={2}
+              disabled={saving || saved}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            />
+          </div>
+
           {/* Resultado del motor configurable (lote) */}
           {loteColor && (
             <div className={`rounded-xl border px-4 py-2.5 text-center text-sm font-bold ${
@@ -457,6 +567,12 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
           )}
 
           {/* Submit */}
+          {!saved && !saving && cantidad && !photoBlob && !photoQueued && (
+            <p className="text-xs text-center text-red-500">Toma una foto de evidencia para poder confirmar.</p>
+          )}
+          {!saved && !saving && cantidad && (photoBlob || photoQueued) && fechaPorConfirmar && (
+            <p className="text-xs text-center text-red-500">Confirma la fecha de vencimiento sugerida para poder guardar.</p>
+          )}
           <button
             type="submit"
             disabled={!canSubmit}
