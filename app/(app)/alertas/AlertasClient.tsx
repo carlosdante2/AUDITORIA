@@ -4,7 +4,10 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { Check, CheckCheck, Clock, FileText } from 'lucide-react'
+import { valorEnRiesgo, mensajeValorRiesgo } from '@/lib/valor-riesgo'
 
+interface Producto { nombre: string; costo_unitario_referencia: number | null }
+interface LoteAlerta { codigo_lote: string | null; cantidad: number; products: Producto | Producto[] | null }
 interface Alerta {
   id: string
   color: string
@@ -14,7 +17,7 @@ interface Alerta {
   creada_en: string
   cerrada_en: string | null
   regla_version: number
-  lotes: { codigo_lote: string | null; products: { nombre: string } | { nombre: string }[] | null } | { codigo_lote: string | null; products: { nombre: string } | { nombre: string }[] | null }[] | null
+  lotes: LoteAlerta | LoteAlerta[] | null
 }
 
 const COLOR_CLS: Record<string, string> = {
@@ -105,6 +108,11 @@ export function AlertasClient({ initialAlertas, userId }: { initialAlertas: Aler
               </div>
 
               <p className="text-sm text-gray-700">{a.mensaje}</p>
+              {(() => {
+                const valor = lote ? valorEnRiesgo(lote.cantidad, prod?.costo_unitario_referencia ?? null) : null
+                const msg = valor != null ? mensajeValorRiesgo(a.color, valor) : null
+                return msg && <p className="text-sm font-bold text-red-600">{msg}</p>
+              })()}
 
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-gray-400 flex items-center gap-1">

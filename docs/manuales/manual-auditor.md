@@ -46,6 +46,9 @@ solos cuando vuelve la conexión.
 5. Verás el **semáforo del producto** (verde/amarillo/naranja/rojo/gris) con el motivo.
    - Offline dice **"Provisional"**: es un adelanto; el resultado final se confirma al
      sincronizar. Empaque **roto** u observación **no conforme** lo marcan como no apto.
+   - Si sale **amarillo o naranja** y el producto tiene costo de referencia cargado,
+     verás cuánto dinero está en riesgo si se pierde, junto a la recomendación de
+     qué hacer con él.
 6. Toma la **foto de evidencia** — es **obligatoria**: respalda el estado de empaque y la
    observación visual que elegiste.
 7. Si quieres, agrega un **comentario** (opcional) con cualquier detalle adicional.

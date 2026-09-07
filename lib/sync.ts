@@ -141,7 +141,7 @@ export async function syncCatalog(tenantId: string): Promise<void> {
 
   const { data: products, error } = await supabase
     .from('products')
-    .select('id, tenant_id, nombre, unidad_medida, subtipo, categoria_id, requiere_fecha_vencimiento, embedding, updated_at')
+    .select('id, tenant_id, nombre, unidad_medida, subtipo, categoria_id, requiere_fecha_vencimiento, costo_unitario_referencia, embedding, updated_at')
     .eq('tenant_id', tenantId)
     .eq('estado', 'activo')
 
@@ -158,6 +158,7 @@ export async function syncCatalog(tenantId: string): Promise<void> {
       subtipo: p.subtipo as string,
       categoria_id: (p.categoria_id as string | null) ?? null,
       requiere_fecha_vencimiento: p.requiere_fecha_vencimiento as boolean,
+      costo_unitario_referencia: (p.costo_unitario_referencia as number | null) ?? null,
       embedding: p.embedding as number[] | null,
       updated_at: p.updated_at as string,
     }))

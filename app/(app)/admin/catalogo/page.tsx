@@ -16,7 +16,7 @@ export default async function CatalogoPage() {
   const [{ data: products }, { count: missingEmbeddings }, { data: categorias }] = await Promise.all([
     supabase
       .from('products')
-      .select('id, nombre, unidad_medida, subtipo, requiere_fecha_vencimiento, estado, updated_at, categoria_id')
+      .select('id, nombre, unidad_medida, subtipo, requiere_fecha_vencimiento, estado, updated_at, categoria_id, costo_unitario_referencia')
       .order('nombre', { ascending: true })
       .limit(500),
     supabase

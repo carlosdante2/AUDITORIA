@@ -89,7 +89,7 @@ export async function getSessionCounts(supabase: SupabaseClient, sessionId: stri
       semaforo_estrategia_circular, semaforo_ods,
       semaforo_metodo_calculo, dias_restantes,
       transcripcion_voz, captura_metodo, foto_evidencia_url, created_at,
-      products ( nombre, subtipo )
+      products ( nombre, subtipo, costo_unitario_referencia )
     `)
     .eq('session_id', sessionId)
     .order('semaforo_color', { ascending: true }) // rojo first alphabetically? no — order by created_at desc

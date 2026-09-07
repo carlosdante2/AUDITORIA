@@ -3,11 +3,15 @@
 import { Lightbulb } from 'lucide-react'
 import type { ResultadoLote, Color } from '@/lib/reglas-engine'
 import { estrategiaRecomendada, odsDeEstrategia, ESTRATEGIA_LABEL } from '@/lib/economia-circular'
+import { valorEnRiesgo, mensajeValorRiesgo } from '@/lib/valor-riesgo'
 
 interface SemaforoDisplayProps {
   resultado: ResultadoLote
   /** true cuando el color es provisional (evaluado offline, se confirma al sincronizar). */
   provisional?: boolean
+  /** Cantidad del lote y costo de referencia del producto — para el valor en riesgo (amarillo/naranja). */
+  cantidad?: number
+  costoUnitarioReferencia?: number | null
 }
 
 const COLOR_CONFIG: Record<Color, { bar: string; bg: string; text: string; label: string; emoji: string }> = {
@@ -24,10 +28,12 @@ const MOTIVO_LABEL: Record<string, string> = {
   SIN_COBERTURA: 'El valor no está cubierto por la regla',
 }
 
-export function SemaforoDisplay({ resultado, provisional = false }: SemaforoDisplayProps) {
+export function SemaforoDisplay({ resultado, provisional = false, cantidad, costoUnitarioReferencia }: SemaforoDisplayProps) {
   const cfg = COLOR_CONFIG[resultado.color_final]
   const estrategia = estrategiaRecomendada(resultado)
   const ods = odsDeEstrategia(estrategia)
+  const valor = cantidad != null ? valorEnRiesgo(cantidad, costoUnitarioReferencia ?? null) : null
+  const valorMsg = valor != null ? mensajeValorRiesgo(resultado.color_final, valor) : null
 
   // Dimensión que determinó el color (la más severa con mensaje/motivo).
   const dominante = [...resultado.detalle].sort(
@@ -73,13 +79,16 @@ export function SemaforoDisplay({ resultado, provisional = false }: SemaforoDisp
         )}
 
         {/* Economía circular / valorización — la acción sugerida al auditor
-            para este color, configurada por el admin en la regla ganadora. */}
-        {estrategia && (
+            para este color, configurada por el admin en la regla ganadora —
+            junto con el valor en riesgo (amarillo/naranja) si el producto
+            tiene costo de referencia cargado (migración 020). */}
+        {(estrategia || valorMsg) && (
           <div className="flex items-start gap-2 bg-white/70 border border-black/5 rounded-xl px-3 py-2">
             <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" aria-hidden />
             <div className="space-y-0.5">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recomendación</p>
-              <p className="text-sm font-semibold text-gray-800">{ESTRATEGIA_LABEL[estrategia]}</p>
+              {valorMsg && <p className="text-sm font-bold text-red-600">{valorMsg}</p>}
+              {estrategia && <p className="text-sm font-semibold text-gray-800">{ESTRATEGIA_LABEL[estrategia]}</p>}
             </div>
           </div>
         )}

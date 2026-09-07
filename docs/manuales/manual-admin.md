@@ -75,6 +75,11 @@ Entra a **Reglas** (icono 🎚️ de la barra inferior, o desde el Panel). En un
    **acción** (solo alerta / bloquea salida / bloquea ingreso / fuerza cuarentena),
    **mensaje** y —opcional— la **ruta de valorización** (banco de alimentos, compostaje…),
    de la que se derivan los ODS que ve el usuario.
+   - Cuando un umbral queda en **amarillo o naranja**, si el producto tiene un
+     **costo de referencia** cargado (Catálogo → editar producto — se autocompleta
+     solo al confirmar una recepción por factura, o lo cargas a mano), el auditor y
+     el supervisor ven cuánto dinero está en riesgo si el lote se pierde, junto a
+     la recomendación.
 4. Usa el **Simulador** (al lado): ingresa un caso hipotético y verás qué color sale, **qué
    regla ganó y por qué**, y qué bloqueos se activarían. No configures a ciegas.
 5. **Guardar**. El sistema valida antes:

@@ -43,6 +43,10 @@ En **Alertas** las ves en tres pestañas:
 
 Reconocer y cerrar son acciones de supervisor/admin. El auditor no puede.
 
+Cada alerta amarilla/naranja de un producto con costo de referencia cargado muestra
+cuánto dinero está en riesgo si el lote se pierde — te ayuda a priorizar cuáles
+atender primero.
+
 ## 3. Sesiones y cierre 📋
 
 - Ves todas las sesiones con su resumen de colores y las **críticas** resaltadas.

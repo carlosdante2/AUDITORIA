@@ -78,6 +78,7 @@ Catálogo de productos aprobados por tenant.
 | `unidad_medida` | text | NOT NULL | e.g., "kg", "litros", "unidades" |
 | `subtipo` | text | NOT NULL | Clave en semaforo_config |
 | `requiere_fecha_vencimiento` | boolean | NOT NULL, DEFAULT true | Según norma INVIMA |
+| `costo_unitario_referencia` | numeric(12,2) | NULL | COP por unidad — "valor en riesgo" del semáforo (migración 020). Se autocompleta al confirmar una recepción; editable en Catálogo |
 | `embedding` | vector(1536) | NULL | OpenAI text-embedding-3-small |
 | `estado` | text | NOT NULL, DEFAULT 'activo' | 'activo' \| 'inactivo' |
 | `created_at` | timestamptz | NOT NULL, DEFAULT now() | - |

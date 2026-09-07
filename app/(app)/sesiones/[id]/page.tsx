@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ArrowLeft, Mic, ExternalLink, Lightbulb, Boxes } from 'lucide-react'
 import { ESTRATEGIA_LABEL } from '@/lib/economia-circular'
 import type { EstrategiaCircular } from '@/lib/reglas-engine'
+import { valorEnRiesgo, mensajeValorRiesgo } from '@/lib/valor-riesgo'
 
 interface ProductCount {
   id: string
@@ -28,7 +29,7 @@ interface ProductCount {
   captura_metodo: 'voz' | 'manual'
   foto_evidencia_url: string | null
   created_at: string
-  products: { nombre: string; subtipo: string } | null
+  products: { nombre: string; subtipo: string; costo_unitario_referencia: number | null } | null
 }
 
 const COLOR_SORT: Record<string, number> = { rojo: 0, naranja: 1, amarillo: 2, gris: 3, verde: 4 }
@@ -234,6 +235,11 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
                 <p className="text-sm font-medium text-gray-700 capitalize">
                   → {count.semaforo_accion.replace(/_/g, ' ')}
                 </p>
+                {(() => {
+                  const valor = valorEnRiesgo(count.cantidad, count.products?.costo_unitario_referencia ?? null)
+                  const msg = valor != null ? mensajeValorRiesgo(count.semaforo_color.toUpperCase(), valor) : null
+                  return msg && <p className="text-sm font-bold text-red-600 pt-0.5">{msg}</p>
+                })()}
                 {count.semaforo_estrategia_circular && (
                   <div className="flex items-start gap-1.5 text-sm text-gray-700 pt-0.5">
                     <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" aria-hidden />

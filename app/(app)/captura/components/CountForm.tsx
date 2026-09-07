@@ -512,6 +512,8 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
               <SemaforoDisplay
                 resultado={semaforo}
                 provisional={typeof navigator !== 'undefined' && !navigator.onLine}
+                cantidad={parseFloat(cantidad) || 0}
+                costoUnitarioReferencia={selectedProduct?.costo_unitario_referencia ?? null}
               />
             </div>
           )}
