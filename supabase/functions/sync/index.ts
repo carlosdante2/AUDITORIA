@@ -17,6 +17,13 @@ interface CountPayload {
   fecha_recepcion_o_compra?: string | null
   estado_empaque: string
   observacion_visual: string
+  comentario?: string | null
+  // lote_id viene resuelto si la captura fue online (CountForm ya creó el lote
+  // vía /api/lotes). Si viene vacío (captura offline), esta función crea el
+  // lote aquí mismo usando codigo_lote/equipo_id — ver más abajo.
+  lote_id?: string | null
+  codigo_lote?: string | null
+  equipo_id?: string | null
   semaforo_color: string
   semaforo_razon?: string
   semaforo_accion?: string
@@ -131,17 +138,51 @@ Deno.serve(async (req: Request) => {
       continue
     }
 
+    // Dedup temprano: si el cliente ya sincronizó este local_id antes pero no
+    // recibió la respuesta (falla de red) y reintenta, no crear un segundo lote
+    // huérfano — el insert de abajo lo hubiera detectado, pero después de ya
+    // haber creado el lote de más.
+    const { data: yaExiste } = await serviceClient
+      .from('product_counts').select('id').eq('local_id', count.local_id).maybeSingle()
+    if (yaExiste) { skipped++; continue }
+
+    // Si la captura fue offline, /api/lotes nunca corrió — el lote no existe.
+    // Se crea aquí (mismos campos que esa ruta) para que el conteo no quede
+    // huérfano y aparezca en Inventario. Queda SIN evaluar por el motor de
+    // reglas (ese código vive en lib/reglas-engine.ts, del lado de Next.js, no
+    // duplicado en Deno) — lo recoge el cron diario de reevaluación o la
+    // próxima lectura de temperatura de su equipo; mientras tanto se ve GRIS.
+    let loteId = count.lote_id ?? null
+    if (!loteId) {
+      const { data: lote } = await serviceClient
+        .from('lotes')
+        .insert({
+          tenant_id: tenantId,
+          producto_id: count.producto_id,
+          codigo_lote: count.codigo_lote ?? null,
+          equipo_id: count.equipo_id ?? null,
+          cantidad: count.cantidad,
+          fecha_vencimiento: count.fecha_vencimiento ?? null,
+          created_by: user.id,
+        })
+        .select('id')
+        .single()
+      loteId = (lote?.id as string | undefined) ?? null
+    }
+
     const row = {
       local_id: count.local_id,
       session_id: count.session_id,
       tenant_id: tenantId,
       producto_id: count.producto_id,
+      lote_id: loteId,
       cantidad: count.cantidad,
       unidad_medida: count.unidad_medida,
       fecha_vencimiento: count.fecha_vencimiento ?? null,
       fecha_recepcion_o_compra: count.fecha_recepcion_o_compra ?? null,
       estado_empaque: count.estado_empaque,
       observacion_visual: count.observacion_visual,
+      comentario: count.comentario ?? null,
       semaforo_color: count.semaforo_color,
       semaforo_razon: count.semaforo_razon ?? '',
       semaforo_accion: count.semaforo_accion ?? '',

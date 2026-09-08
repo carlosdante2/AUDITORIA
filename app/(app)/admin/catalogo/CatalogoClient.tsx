@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Search, Edit2, Power, Trash2, Zap, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { fmtCOP } from '@/lib/valor-riesgo'
 
 interface Product {
   id: string
@@ -13,6 +14,9 @@ interface Product {
   estado: string
   updated_at: string
   categoria_id: string | null
+  // Costo de referencia para el "valor en riesgo" del semáforo (migración 020).
+  // Se autocompleta al confirmar una recepción; editable a mano aquí.
+  costo_unitario_referencia: number | null
 }
 
 interface Categoria { id: string; nombre: string }
@@ -54,7 +58,7 @@ export function CatalogoClient({ initialProducts, missingEmbeddings, categorias 
 
   function startEdit(p: Product) {
     setEditingId(p.id)
-    setEditData({ nombre: p.nombre, unidad_medida: p.unidad_medida, subtipo: p.subtipo, categoria_id: p.categoria_id })
+    setEditData({ nombre: p.nombre, unidad_medida: p.unidad_medida, subtipo: p.subtipo, categoria_id: p.categoria_id, costo_unitario_referencia: p.costo_unitario_referencia })
   }
 
   async function saveEdit(id: string) {
@@ -62,7 +66,11 @@ export function CatalogoClient({ initialProducts, missingEmbeddings, categorias 
     const supabase = createClient()
     const { error } = await supabase
       .from('products')
-      .update({ nombre: editData.nombre, unidad_medida: editData.unidad_medida, subtipo: editData.subtipo, categoria_id: editData.categoria_id ?? null })
+      .update({
+        nombre: editData.nombre, unidad_medida: editData.unidad_medida, subtipo: editData.subtipo,
+        categoria_id: editData.categoria_id ?? null,
+        costo_unitario_referencia: editData.costo_unitario_referencia ?? null,
+      })
       .eq('id', id)
 
     if (!error) {
@@ -249,6 +257,18 @@ export function CatalogoClient({ initialProducts, missingEmbeddings, categorias 
                   <option value="">Sin categoría (para reglas por categoría)</option>
                   {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
+                <label className="block space-y-1">
+                  <span className="text-xs font-semibold text-gray-600">
+                    Costo de referencia (COP, por {editData.unidad_medida || 'unidad'})
+                  </span>
+                  <input
+                    type="number" inputMode="decimal" min="0" step="1"
+                    value={editData.costo_unitario_referencia ?? ''}
+                    onChange={(e) => setEditData((d) => ({ ...d, costo_unitario_referencia: e.target.value === '' ? null : Number(e.target.value) }))}
+                    placeholder="Se autocompleta al confirmar una recepción, o cárgalo aquí"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </label>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -295,6 +315,9 @@ export function CatalogoClient({ initialProducts, missingEmbeddings, categorias 
                   <p className="text-xs text-gray-400">
                     {p.unidad_medida} · {p.subtipo}
                     {catNombre(p.categoria_id) && <span className="ml-1 text-indigo-500">· {catNombre(p.categoria_id)}</span>}
+                    {p.costo_unitario_referencia != null && (
+                      <span className="ml-1 text-emerald-600">· {fmtCOP(p.costo_unitario_referencia)}/{p.unidad_medida}</span>
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">

@@ -25,6 +25,10 @@ Content-Type: application/json
       "fecha_recepcion_o_compra": null,
       "estado_empaque": "intacto",
       "observacion_visual": "normal",
+      "comentario": null,
+      "lote_id": null,
+      "codigo_lote": "L-2026-0812",
+      "equipo_id": "uuid-o-null",
       "semaforo_color": "amarillo",
       "semaforo_razon": "Vence en 1 día",
       "semaforo_accion": "usar_primero_fifo",
@@ -82,3 +86,15 @@ ON CONFLICT (local_id) DO NOTHING;
 - Valida que `session_id` pertenece al tenant del JWT antes de insertar
 - Procesa máximo 50 conteos por request
 - Fotos se sincronizan por separado (upload directo a Supabase Storage desde cliente)
+- **Requiere el header `Authorization: Bearer {access_token}` del usuario** —
+  `verify_jwt = true` en `supabase/config.toml` lo exige a nivel de gateway antes
+  de que el código de la función corra. El cliente (`lib/sync.ts`) obtiene el
+  token vigente con `supabase.auth.getSession()` en cada intento de flush.
+- Si `lote_id` no viene en el payload (captura hecha offline, donde `/api/lotes`
+  nunca corrió), la función crea el lote aquí mismo con `codigo_lote`/`equipo_id`
+  y lo enlaza. Ese lote queda **sin evaluar por el motor de reglas** (no está
+  duplicado en Deno) hasta el próximo cron diario o lectura de temperatura de
+  su equipo — mientras tanto se ve GRIS en Inventario.
+- Antes de crear el lote, verifica por `local_id` si el conteo ya se sincronizó
+  en un intento previo (reintento tras fallo de red del lado del cliente) para
+  no crear un lote huérfano duplicado.

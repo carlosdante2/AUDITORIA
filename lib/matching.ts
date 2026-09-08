@@ -7,6 +7,7 @@ export interface MatchCandidate {
   subtipo: string
   categoria_id: string | null
   requiere_fecha_vencimiento: boolean
+  costo_unitario_referencia: number | null  // valor en riesgo del semáforo (migración 020)
   score: number
   method: 'embedding' | 'text'
 }
@@ -43,6 +44,7 @@ export async function matchByEmbedding(
       subtipo: p.subtipo,
       categoria_id: p.categoria_id ?? null,
       requiere_fecha_vencimiento: p.requiere_fecha_vencimiento,
+      costo_unitario_referencia: p.costo_unitario_referencia ?? null,
       score: dot(queryEmbedding, p.embedding as number[]),
       method: 'embedding' as const,
     }))
@@ -79,6 +81,7 @@ export async function matchByText(
         subtipo: p.subtipo,
         categoria_id: p.categoria_id ?? null,
         requiere_fecha_vencimiento: p.requiere_fecha_vencimiento,
+      costo_unitario_referencia: p.costo_unitario_referencia ?? null,
         score,
         method: 'text' as const,
       }

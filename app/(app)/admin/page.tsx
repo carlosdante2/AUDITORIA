@@ -1,80 +1,44 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import Link from 'next/link'
-import { Package, Upload, Clock, Users, ChevronRight, Building2, DollarSign, SlidersHorizontal, Bell, Refrigerator, FileText } from 'lucide-react'
+import { Package, Upload, Clock, Users, Building2, DollarSign, SlidersHorizontal, Bell, Refrigerator, FileText } from 'lucide-react'
 
-const SECTIONS = [
+// Secciones agrupadas por tema, cada grupo con un solo color de acento
+// (antes cada tarjeta tenía su propio color — 10 tonos distintos leían como
+// una lista sin orden). Dentro de cada grupo, primero lo que se usa a diario.
+const GROUPS = [
   {
-    href: '/admin/sedes',
-    icon: <Building2 className="w-6 h-6 text-indigo-600" />,
-    title: 'Sedes y secciones',
-    desc: 'Configurar los almacenes/sedes y sus secciones (cámara fría, almacén seco…)',
-    bg: 'bg-indigo-50 border-indigo-200',
+    label: 'Motor y monitoreo',
+    accent: 'bg-rose-50 border-rose-200',
+    iconColor: 'text-rose-600',
+    items: [
+      { href: '/alertas', icon: Bell, title: 'Alertas', desc: 'Hallazgos del semáforo' },
+      { href: '/admin/reglas', icon: SlidersHorizontal, title: 'Reglas del semáforo', desc: 'Umbrales configurables' },
+      { href: '/reportes', icon: FileText, title: 'Reportes HACCP', desc: 'Documento imprimible' },
+      { href: '/admin/costos', icon: DollarSign, title: 'Costos IA', desc: 'Gasto en Groq y Jina' },
+    ],
   },
   {
-    href: '/admin/catalogo',
-    icon: <Package className="w-6 h-6 text-blue-600" />,
-    title: 'Catálogo de productos',
-    desc: 'Productos y categorías: editar, eliminar, categorizar, activar/desactivar y agrupar para reglas de semáforo',
-    bg: 'bg-blue-50 border-blue-200',
+    label: 'Catálogo',
+    accent: 'bg-blue-50 border-blue-200',
+    iconColor: 'text-blue-600',
+    items: [
+      { href: '/admin/pendientes', icon: Clock, title: 'Pendientes', desc: 'Aprobar productos detectados' },
+      { href: '/admin/catalogo', icon: Package, title: 'Catálogo', desc: 'Productos y categorías' },
+      { href: '/admin/equipos', icon: Refrigerator, title: 'Equipos', desc: 'Cámaras y neveras' },
+      { href: '/admin/importar', icon: Upload, title: 'Importar CSV', desc: 'Carga masiva' },
+    ],
   },
   {
-    href: '/admin/equipos',
-    icon: <Refrigerator className="w-6 h-6 text-cyan-600" />,
-    title: 'Equipos de frío',
-    desc: 'Cámaras y neveras donde se guardan los lotes (base de las reglas de temperatura)',
-    bg: 'bg-cyan-50 border-cyan-200',
+    label: 'Organización',
+    accent: 'bg-indigo-50 border-indigo-200',
+    iconColor: 'text-indigo-600',
+    items: [
+      { href: '/admin/usuarios', icon: Users, title: 'Usuarios', desc: 'Invitar accesos' },
+      { href: '/admin/sedes', icon: Building2, title: 'Sedes', desc: 'Almacenes y secciones' },
+    ],
   },
-  {
-    href: '/admin/importar',
-    icon: <Upload className="w-6 h-6 text-purple-600" />,
-    title: 'Importar productos (CSV)',
-    desc: 'Carga masiva de productos y generación de embeddings para búsqueda por voz',
-    bg: 'bg-purple-50 border-purple-200',
-  },
-  {
-    href: '/admin/pendientes',
-    icon: <Clock className="w-6 h-6 text-orange-600" />,
-    title: 'Productos pendientes',
-    desc: 'Revisar y aprobar productos detectados por los auditores que no están en catálogo',
-    bg: 'bg-orange-50 border-orange-200',
-  },
-  {
-    href: '/admin/usuarios',
-    icon: <Users className="w-6 h-6 text-green-600" />,
-    title: 'Usuarios y accesos',
-    desc: 'Invitar auditores y supervisores al sistema',
-    bg: 'bg-green-50 border-green-200',
-  },
-  {
-    href: '/admin/reglas',
-    icon: <SlidersHorizontal className="w-6 h-6 text-rose-600" />,
-    title: 'Reglas del semáforo',
-    desc: 'Configurar umbrales (vencimiento, trazabilidad, cuarentena, stock) + simulador',
-    bg: 'bg-rose-50 border-rose-200',
-  },
-  {
-    href: '/alertas',
-    icon: <Bell className="w-6 h-6 text-amber-600" />,
-    title: 'Alertas',
-    desc: 'Revisar, reconocer y cerrar los hallazgos del semáforo',
-    bg: 'bg-amber-50 border-amber-200',
-  },
-  {
-    href: '/reportes',
-    icon: <FileText className="w-6 h-6 text-slate-600" />,
-    title: 'Reportes HACCP',
-    desc: 'Documento imprimible: temperaturas, no conformidades y cumplimiento por período',
-    bg: 'bg-slate-50 border-slate-200',
-  },
-  {
-    href: '/admin/costos',
-    icon: <DollarSign className="w-6 h-6 text-emerald-600" />,
-    title: 'Control de costos IA',
-    desc: 'Gasto real y proyección de Groq y Jina, con alertas de plan gratuito',
-    bg: 'bg-emerald-50 border-emerald-200',
-  },
-]
+] as const
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -113,21 +77,30 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Sections */}
-      <div className="space-y-3">
-        {SECTIONS.map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className={`flex items-center gap-4 border rounded-2xl p-4 hover:opacity-80 transition-opacity ${s.bg}`}
-          >
-            <div className="shrink-0">{s.icon}</div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-gray-900 text-sm">{s.title}</p>
-              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{s.desc}</p>
+      {/* Secciones agrupadas */}
+      <div className="space-y-6">
+        {GROUPS.map((group) => (
+          <div key={group.label} className="space-y-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-1">
+              {group.label}
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {group.items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex flex-col items-center gap-1.5 text-center border rounded-2xl p-4 hover:opacity-80 transition-opacity ${group.accent}`}
+                  >
+                    <Icon className={`w-6 h-6 ${group.iconColor}`} />
+                    <p className="font-semibold text-gray-900 text-sm leading-tight">{item.title}</p>
+                    <p className="text-[11px] text-gray-500 leading-tight">{item.desc}</p>
+                  </Link>
+                )
+              })}
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-          </Link>
+          </div>
         ))}
       </div>
     </div>

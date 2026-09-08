@@ -14,6 +14,7 @@ interface Product {
   estado: string
   updated_at: string
   categoria_id: string | null
+  costo_unitario_referencia: number | null
 }
 
 interface Categoria { id: string; nombre: string; parent_id: string | null }

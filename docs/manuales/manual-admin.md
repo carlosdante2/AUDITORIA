@@ -42,6 +42,10 @@ hacer todo lo de supervisor y auditor.
 
 1. **Sedes y secciones** → dónde se guarda el inventario.
 2. **Equipos de frío** → cámaras/neveras (si vas a usar reglas de temperatura).
+   Asigna a cada equipo su **sede y sección reales** (no un texto suelto) para
+   que el auditor sepa exactamente dónde está cada nevera al registrar la
+   temperatura. Si ya tienes equipos creados sin ubicación, edítalos con el
+   ícono de lápiz para asignársela.
 3. **Catálogo** → sube tus productos (a mano o por **Importar CSV**). Columnas:
    nombre, unidad, subtipo sanitario, requiere fecha de vencimiento.
 4. **Categorías** → agrupa productos (ej. "Congelados", "Lácteos").
@@ -71,6 +75,11 @@ Entra a **Reglas** (icono 🎚️ de la barra inferior, o desde el Panel). En un
    **acción** (solo alerta / bloquea salida / bloquea ingreso / fuerza cuarentena),
    **mensaje** y —opcional— la **ruta de valorización** (banco de alimentos, compostaje…),
    de la que se derivan los ODS que ve el usuario.
+   - Cuando un umbral queda en **amarillo o naranja**, si el producto tiene un
+     **costo de referencia** cargado (Catálogo → editar producto — se autocompleta
+     solo al confirmar una recepción por factura, o lo cargas a mano), el auditor y
+     el supervisor ven cuánto dinero está en riesgo si el lote se pierde, junto a
+     la recomendación.
 4. Usa el **Simulador** (al lado): ingresa un caso hipotético y verás qué color sale, **qué
    regla ganó y por qué**, y qué bloqueos se activarían. No configures a ciegas.
 5. **Guardar**. El sistema valida antes:

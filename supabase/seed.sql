@@ -230,3 +230,58 @@ SELECT * FROM (VALUES
   ('20000000-0000-0000-0000-000000000013'::uuid, 'ROJO',    'LTE',     NULL::numeric, 0::numeric,  'dias', 'BLOQUEA_SALIDA', 'Vencido: bloquear y registrar disposición.',                         3, 'DISPOSICION_CONTROLADA')
 ) AS v
 WHERE NOT EXISTS (SELECT 1 FROM regla_umbrales WHERE regla_id = '20000000-0000-0000-0000-000000000013');
+
+-- ================================================================
+-- Cárnicos y aves — subcategoría + regla TEMPERATURA de ejemplo
+-- ================================================================
+-- Hijo de 'Perecederos críticos': sigue heredando su regla VENCIMIENTO (la
+-- cadena de categorías la resuelve el motor, ver resolverReglaAplicable) y
+-- suma su propia regla TEMPERATURA — más estricta que el resto de perecederos
+-- críticos (lácteos, pescado, preparados), porque la cadena de frío de
+-- cárnicos/aves frescos tiene un rango normado propio.
+--
+-- Fuente: Decreto 1500 de 2007 (reglamento técnico de carne y productos
+-- cárnicos comestibles — cadena de frío refrigerada 0°C–4°C) y Resolución
+-- 2674 de 2013 (INVIMA — condiciones de almacenamiento de perecederos /
+-- zona de multiplicación bacteriana por encima de ese rango).
+--
+-- Es un punto de partida configurable, no un valor cableado: el admin puede
+-- ajustarlo desde /admin/reglas (símbolos de operador, tooltips de acción,
+-- estrategia circular — todo lo que ya construimos ahí aplica igual aquí).
+
+INSERT INTO categorias (tenant_id, nombre, parent_id)
+VALUES (
+  '10000000-0000-0000-0000-000000000001', 'Cárnicos y aves',
+  (SELECT id FROM categorias WHERE tenant_id = '10000000-0000-0000-0000-000000000001' AND nombre = 'Perecederos críticos')
+)
+ON CONFLICT (tenant_id, nombre) DO NOTHING;
+
+-- Mueve los cárnicos/aves ya sembrados de 'Perecederos críticos' a la
+-- subcategoría más específica (pescado/mariscos quedan en la más general:
+-- su cadena de frío y su norma de referencia son distintas).
+UPDATE products SET categoria_id =
+  (SELECT id FROM categorias WHERE tenant_id = '10000000-0000-0000-0000-000000000001' AND nombre = 'Cárnicos y aves')
+WHERE tenant_id = '10000000-0000-0000-0000-000000000001'
+  AND subtipo IN ('carne_res','carne_cerdo','pollo');
+
+INSERT INTO reglas (id, tenant_id, tipo, ambito, ambito_id, nombre, creado_por)
+VALUES ('20000000-0000-0000-0000-000000000021', '10000000-0000-0000-0000-000000000001',
+        'TEMPERATURA', 'CATEGORIA',
+        (SELECT id FROM categorias WHERE tenant_id = '10000000-0000-0000-0000-000000000001' AND nombre = 'Cárnicos y aves'),
+        'Cadena de frío — cárnicos y aves (refrigerado)', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO regla_umbrales (regla_id, color, operador, valor_min, valor_max, unidad, accion, mensaje, orden, estrategia_circular)
+SELECT * FROM (VALUES
+  ('20000000-0000-0000-0000-000000000021'::uuid, 'VERDE'::color_semaforo,   'BETWEEN', 0::numeric,   4::numeric,    'celsius', 'SOLO_ALERTA'::accion_regla,
+    'Dentro del rango seguro de refrigeración (Decreto 1500/2007: 0°C–4°C).', 0, NULL::text),
+  ('20000000-0000-0000-0000-000000000021'::uuid, 'AMARILLO', 'LT',      NULL::numeric, 0::numeric,    'celsius', 'SOLO_ALERTA',
+    'Por debajo de 0°C: no es riesgo microbiológico, pero puede indicar mal funcionamiento del equipo o congelación no deseada. Verificar.', 1, NULL::text),
+  ('20000000-0000-0000-0000-000000000021'::uuid, 'AMARILLO', 'BETWEEN', 4.1::numeric, 6::numeric,    'celsius', 'SOLO_ALERTA',
+    'Temperatura elevada: revisar el equipo cuanto antes.', 2, NULL::text),
+  ('20000000-0000-0000-0000-000000000021'::uuid, 'NARANJA',  'BETWEEN', 6.1::numeric, 8::numeric,    'celsius', 'BLOQUEA_SALIDA',
+    'Acercándose a zona de riesgo microbiológico (>6°C): no despachar sin verificar el equipo.', 3, NULL::text),
+  ('20000000-0000-0000-0000-000000000021'::uuid, 'ROJO',     'GT',      8::numeric,    NULL::numeric, 'celsius', 'FUERZA_CUARENTENA',
+    'Zona de multiplicación bacteriana acelerada (>8°C): aislar el lote de inmediato.', 4, NULL::text)
+) AS v
+WHERE NOT EXISTS (SELECT 1 FROM regla_umbrales WHERE regla_id = '20000000-0000-0000-0000-000000000021');

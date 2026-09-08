@@ -13,6 +13,7 @@ export interface ProductCache {
   subtipo: string
   categoria_id: string | null   // necesario para especificidad del motor (§5.2.1)
   requiere_fecha_vencimiento: boolean
+  costo_unitario_referencia: number | null  // valor en riesgo del semáforo (migración 020)
   embedding: number[] | null  // Float32Array serialized as plain array
   updated_at: string
 }

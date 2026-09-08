@@ -37,7 +37,7 @@ export const FREE_TIER = {
 export const ALERT_THRESHOLD = 0.8
 
 export type Service = 'groq' | 'jina'
-export type Endpoint = 'voz' | 'vision' | 'insights' | 'embeddings' | 'match'
+export type Endpoint = 'voz' | 'vision' | 'vision-fecha' | 'insights' | 'embeddings' | 'match'
 
 export interface UsageInput {
   service: Service

@@ -12,7 +12,7 @@ export default async function AlertasPage() {
 
   const { data: alertas } = await supabase
     .from('alertas')
-    .select('id, color, mensaje, valor_evaluado, estado, creada_en, cerrada_en, regla_version, lotes(codigo_lote, products(nombre))')
+    .select('id, color, mensaje, valor_evaluado, estado, creada_en, cerrada_en, regla_version, lotes(codigo_lote, cantidad, products(nombre, costo_unitario_referencia))')
     .order('creada_en', { ascending: false })
     .limit(500)
 

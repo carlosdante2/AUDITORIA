@@ -1,15 +1,22 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, Ban, PackageX, Thermometer } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { ChevronDown, ChevronUp, Ban, PackageX, Thermometer, Tag, MapPin } from 'lucide-react'
 
 interface Estado { color: string; detalle: Detalle[]; bloqueo_salida: boolean; bloqueo_ingreso: boolean; evaluado_en: string }
 interface Detalle { tipo: string; color: string; motivo?: string; mensaje?: string | null; valor_evaluado: number | null; valor_text: string | null }
+interface Categoria { nombre: string }
+interface Producto { nombre: string; unidad_medida: string; categorias: Categoria | Categoria[] | null }
+interface Sede { nombre: string }
+interface Seccion { nombre: string }
+interface Equipo { codigo: string; ubicacion: string | null; sedes: Sede | Sede[] | null; secciones: Seccion | Seccion[] | null }
 interface Lote {
   id: string; codigo_lote: string | null; cantidad: number; fecha_vencimiento: string | null
   estado_cuarentena: string; created_at: string
-  products: { nombre: string; unidad_medida: string } | { nombre: string; unidad_medida: string }[] | null
+  products: Producto | Producto[] | null
+  equipos: Equipo | Equipo[] | null
   lote_estado: Estado | Estado[] | null
 }
 
@@ -25,13 +32,33 @@ const ORDEN = ['ROJO', 'NARANJA', 'AMARILLO', 'GRIS', 'VERDE']
 
 function one<T>(x: T | T[] | null): T | null { return Array.isArray(x) ? (x[0] ?? null) : x }
 
-export function InventarioClient({ initialLotes }: { initialLotes: Lote[] }) {
-  const [filtro, setFiltro] = useState<string | null>(null)
-  const [expandido, setExpandido] = useState<string | null>(null)
+// Ubicación real del equipo (sede · sección · detalle) — igual que en Temperatura.
+function ubicacionLabel(eq: Equipo | null): string | null {
+  if (!eq) return null
+  const sede = one(eq.sedes)?.nombre
+  const seccion = one(eq.secciones)?.nombre
+  const partes = [eq.codigo, sede, seccion, eq.ubicacion].filter(Boolean)
+  return partes.length > 0 ? partes.join(' · ') : null
+}
 
-  const lotes = useMemo(() => initialLotes.map((l) => ({
-    ...l, prod: one(l.products), est: one(l.lote_estado),
-  })), [initialLotes])
+export function InventarioClient({ initialLotes }: { initialLotes: Lote[] }) {
+  // Enlace profundo desde Sesiones ("Ver en Inventario"): /inventario?lote=<id>
+  // abre y resalta ese lote directamente, sin importar el filtro de color activo.
+  const searchParams = useSearchParams()
+  const loteParam = searchParams.get('lote')
+
+  const [filtro, setFiltro] = useState<string | null>(null)
+  const [expandido, setExpandido] = useState<string | null>(loteParam)
+
+  useEffect(() => {
+    if (!loteParam) return
+    document.getElementById(`lote-${loteParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [loteParam])
+
+  const lotes = useMemo(() => initialLotes.map((l) => {
+    const prod = one(l.products)
+    return { ...l, prod, categoria: one(prod?.categorias ?? null)?.nombre ?? null, equipo: one(l.equipos), est: one(l.lote_estado) }
+  }), [initialLotes])
 
   const conteos = useMemo(() => {
     const c: Record<string, number> = { ROJO: 0, NARANJA: 0, AMARILLO: 0, GRIS: 0, VERDE: 0 }
@@ -39,7 +66,10 @@ export function InventarioClient({ initialLotes }: { initialLotes: Lote[] }) {
     return c
   }, [lotes])
 
-  const visibles = filtro ? lotes.filter((l) => (l.est?.color ?? 'GRIS') === filtro) : lotes
+  // El lote enlazado siempre se ve, aunque no coincida con el filtro de color activo.
+  const visibles = filtro
+    ? lotes.filter((l) => (l.est?.color ?? 'GRIS') === filtro || l.id === loteParam)
+    : lotes
 
   return (
     <div className="space-y-5">
@@ -73,8 +103,9 @@ export function InventarioClient({ initialLotes }: { initialLotes: Lote[] }) {
         {visibles.map((l) => {
           const color = l.est?.color ?? 'GRIS'
           const abierto = expandido === l.id
+          const enlazado = l.id === loteParam
           return (
-            <div key={l.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div key={l.id} id={`lote-${l.id}`} className={`bg-white rounded-2xl border overflow-hidden ${enlazado ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
               <button onClick={() => setExpandido(abierto ? null : l.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
                 <span className={`w-3 h-3 rounded-full shrink-0 ${DOT[color]}`} />
                 <div className="min-w-0 flex-1">
@@ -83,6 +114,10 @@ export function InventarioClient({ initialLotes }: { initialLotes: Lote[] }) {
                     {l.cantidad} {l.prod?.unidad_medida ?? ''}
                     {l.codigo_lote && ` · lote ${l.codigo_lote}`}
                     {l.fecha_vencimiento && ` · vence ${l.fecha_vencimiento}`}
+                  </p>
+                  <p className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                    {l.categoria && <span className="flex items-center gap-1"><Tag className="w-3 h-3 shrink-0" />{l.categoria}</span>}
+                    {ubicacionLabel(l.equipo) && <span className="flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" />{ubicacionLabel(l.equipo)}</span>}
                   </p>
                 </div>
                 <span className={`text-[11px] font-black px-2.5 py-1 rounded-full border ${COLOR_CLS[color]}`}>{color}</span>

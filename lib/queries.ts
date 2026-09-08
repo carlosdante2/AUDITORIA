@@ -83,13 +83,13 @@ export async function getSessionCounts(supabase: SupabaseClient, sessionId: stri
   const { data } = await supabase
     .from('product_counts')
     .select(`
-      id, local_id, cantidad, unidad_medida, fecha_vencimiento,
-      estado_empaque, observacion_visual,
+      id, local_id, lote_id, cantidad, unidad_medida, fecha_vencimiento,
+      estado_empaque, observacion_visual, comentario,
       semaforo_color, semaforo_razon, semaforo_accion,
       semaforo_estrategia_circular, semaforo_ods,
       semaforo_metodo_calculo, dias_restantes,
       transcripcion_voz, captura_metodo, foto_evidencia_url, created_at,
-      products ( nombre, subtipo )
+      products ( nombre, subtipo, costo_unitario_referencia )
     `)
     .eq('session_id', sessionId)
     .order('semaforo_color', { ascending: true }) // rojo first alphabetically? no — order by created_at desc
