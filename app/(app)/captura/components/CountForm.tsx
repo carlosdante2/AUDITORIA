@@ -205,6 +205,7 @@ export function CountForm({ sessionId, tenantId, initialQuery = '', equipos = []
             fecha_recepcion: fechaRecepcion || undefined,
             codigo_lote: codigoLote || null,
             equipo_id: equipoId || null,
+            estado_cuarentena: mapCuarentena(estadoEmpaque, observacion),
           }),
         })
         if (res.ok) { const d = await res.json(); setLoteColor(d.estado?.color_final ?? null) }
